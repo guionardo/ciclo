@@ -193,6 +193,10 @@ class JiraTaskStore {
           args.push('--label', labels.join(','));
         }
       }
+      // Parent issue (hierarchy link), e.g. epic or feature key
+      if (taskData.parent) {
+        args.push('--parent', String(taskData.parent));
+      }
       const data = await this._run(args);
       const items = this._normalizeWorkItems(Array.isArray(data) ? data : [data]);
       const created = items[0] || {};

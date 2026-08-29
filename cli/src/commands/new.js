@@ -15,6 +15,7 @@ const newCommand = new Command()
   .command('new [description]')
   .description('Create a new task (Jira issue type defaults to Task)')
   .option('-t, --type <type>', `Jira issue type (Epic, Feature, Story, Task, Bug) — default ${DEFAULT_ISSUE_TYPE}`)
+  .option('-p, --parent <key>', 'Parent issue key (hierarchy link, e.g. an Epic or Feature key)')
   .action(async (description, opts) => {
     const cwd = process.cwd();
     const cicloDir = join(cwd, '.ciclo');
@@ -76,6 +77,50 @@ const newCommand = new Command()
       }
     }
 
+    // --- Resolve parent issue (hierarchy link) ---
+    let parentKey = null;
+    const isJiraConfigured = !!config.services?.jira?.configured;
+    if (opts.parent) {
+      if (!/^[A-Z]+-\d+$/i.test(opts.parent)) {
+        console.error(`✗ Parent deve ser uma chave de issue Jira (ex.: FW-9). Recebido: ${opts.parent}`);
+        process.exit(1);
+      }
+      parentKey = opts.parent.toUpperCase();
+      console.log(`   👪 Parent: ${parentKey}`);
+    } else if (isJiraConfigured && issueType !== 'Epic') {
+      // Offer to pick a parent (Epic/Feature/Story from this repo) — optional
+      try {
+        const JiraTaskStore = require('../services/JiraTaskStore.js');
+        const { getRepoLabel } = require('../services/repoLabel.js');
+        const jiraStore = new JiraTaskStore();
+        if (jiraStore.configured) {
+          // Candidates: issues of container types carrying the repo label
+          const containerTypes = { 'Feature': ['Epic'], 'Story': ['Epic', 'Feature'], 'Task': ['Epic', 'Feature', 'Story'], 'Bug': ['Epic', 'Feature', 'Story'] };
+          const wanted = containerTypes[issueType] || [];
+          const issues = await jiraStore.listTasks({ repoLabel: getRepoLabel(cwd), limit: 50 });
+          const candidates = issues.filter((i) => wanted.includes(String(i.issueType?.name || i.issueType || '')));
+          if (candidates.length > 0) {
+            const wantParent = await prompts({
+              type: 'confirm',
+              name: 'set',
+              message: `Deseja definir uma issue pai para o ${issueType}? (${candidates.length} candidato(s))`,
+              initial: false,
+            });
+            if (wantParent.set) {
+              const pick = await prompts({
+                type: 'select',
+                name: 'parent',
+                message: 'Issue pai:',
+                choices: candidates.map((c) => ({ title: `${c.key} — ${c.summary}`, value: c.key })),
+              });
+              if (pick.parent) parentKey = pick.parent;
+            }
+          }
+        }
+      } catch (_) { /* parent is optional — ignore discovery errors */ }
+      if (parentKey) console.log(`   👪 Parent: ${parentKey}`);
+    }
+
     // Generate short task ID (first 8 chars of UUID)
     let taskId;
     let attempts = 0;
@@ -94,6 +139,7 @@ const newCommand = new Command()
       description: description || "(no description)",
       status: "backlog",
       issueType,
+      ...(parentKey && { parentKey }),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -124,6 +170,7 @@ const newCommand = new Command()
             issueType,
             project: config.services.jira.projectKey,
             labels: [repoLabel],
+            ...(parentKey && { parent: parentKey }),
           });
           // Optionally store the Jira key in the task object for future reference
           task.jiraKey = jiraTask.key;
