@@ -154,6 +154,13 @@ sobrescrevível com env `CICLO_REPO_LABEL`):
   `description` de cada ancestor) em `parentChain`. O `start` re-sincroniza SEMPRE
   (issue + parentChain) antes de criar a branch, garantindo escopo alinhado ao board;
   o `refine` exibe essa cadeia como contexto.
+- **Label `refined` (prontidão para execução)**:
+  - Ao refinar, a issue recebe a label **`refined`** (sincronizada Jira ↔ local).
+  - `ciclo start` verifica a label: se a issue **não** está refinada, pergunta ao dev
+    se quer revisar a descrição e refiná-la (objetivo 🎯, passos de execução 🪜 e
+    resultado esperado 📦) antes de iniciar; o refine usa a cadeia de parents como
+    contexto adicional.
+  - `ciclo list`/`ciclo show` indicam o estado de refinamento (✅ / ⚠️-sem-refine).
 
 ### 1.7 Hierarquia de issue types
 

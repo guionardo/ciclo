@@ -138,6 +138,7 @@ async function fetchFromJira(jiraKey, cwd, tasksDir) {
       repoLabel,
       description: remote.summary,
       status: jiraToCiclo(remote.status),
+      refined: (remote.labels || []).map((l) => String(l).toLowerCase()).includes('refined'),
       createdAt: remote.created ? new Date(remote.created).toISOString() : new Date().toISOString(),
       updatedAt: remote.updated ? new Date(remote.updated).toISOString() : new Date().toISOString(),
     };
@@ -164,7 +165,22 @@ function printTask(task) {
   if (task.jiraKey) console.log(`🔑 Jira: ${task.jiraKey}`);
   console.log(`📝 Description: ${task.description}`);
   console.log(`📌 Status: ${task.status}`);
+  console.log(`✅ Refinada: ${task.refined ? 'sim (label refined)' : 'não — rode ciclo refine'}`);
   if (task.details) console.log(`📄 Details: ${task.details}`);
+  if (task.goal) console.log(`🎯 Objetivo: ${task.goal}`);
+  if (task.steps && task.steps.length > 0) {
+    console.log('🪜 Passos para execução:');
+    task.steps.forEach((s, i) => console.log(`   ${i + 1}. ${s}`));
+  }
+  if (task.expectedResult) console.log(`📦 Resultado esperado: ${task.expectedResult}`);
+  if (task.acceptanceCriteria && task.acceptanceCriteria.length > 0) {
+    console.log('✅ Acceptance Criteria:');
+    task.acceptanceCriteria.forEach((c, i) => console.log(`   ${i + 1}. ${c}`));
+  }
+  if (task.subtasks && task.subtasks.length > 0) {
+    console.log('📋 Subtasks:');
+    task.subtasks.forEach((s, i) => console.log(`   ${i + 1}. ${s}`));
+  }
   if (task.parentChain && task.parentChain.length > 0) {
     console.log('🧭 Contexto (cadeia de parents):');
     task.parentChain.forEach((p) => {

@@ -112,6 +112,40 @@ const startCommand = new Command()
               console.log(`      ${p.key} [${p.issueType}] ${p.summary}${p.description ? ' — ' + p.description.slice(0, 60) : ''}`);
             });
           }
+
+          // --- Refined check: the issue must carry the "refined" label ---
+          // If it does not, ask the dev whether to review/refine the description
+          // into a clear execution plan before starting work.
+          const isRefined = (remote.labels || []).map((l) => String(l).toLowerCase()).includes('refined');
+          task.refined = isRefined;
+          if (!isRefined) {
+            console.log('');
+            console.log('   ⚠️  A issue NÃO está marcada como refinada (label "refined" ausente).');
+            console.log('      Sem um plano claro, a execução pode divergir do objetivo.');
+            const prompts = require('prompts');
+            const { refineNow } = await prompts({
+              type: 'confirm',
+              name: 'refineNow',
+              message: 'Deseja revisar a descrição e refiná-la agora (objetivo, passos e resultado esperado)?',
+              initial: true,
+            });
+            if (refineNow) {
+              // Run the refined flow (same CLI), then reload the task
+              const { execa: runExe } = require('execa');
+              try {
+                await runExe('ciclo', ['refine', taskId], { cwd, stdio: 'inherit' });
+                task = JSON.parse(await readFile(taskFile, 'utf8'));
+                console.log('   ✅ Task refinada — continuando para iniciar a execução.');
+              } catch (refineErr) {
+                console.log(`   ⚠️  Refinamento não concluído (${refineErr.message}) — prosseguindo com o escopo atual.`);
+              }
+            } else {
+              console.log('   ℹ️  Prosseguindo sem refinar. Considere rodar `ciclo refine` antes de implementar.');
+            }
+          } else {
+            console.log('   ✅ Issue refinada (label "refined" presente).');
+          }
+          await writeFile(taskFile, JSON.stringify(task, null, 2));
         } else {
           console.log('   ⚠️  ACLI não autenticada — continuando com o escopo local (rode: acli jira auth login --web)');
         }

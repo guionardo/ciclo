@@ -1,12 +1,18 @@
 // src/commands/refine.js
+// Refines a task into an execution plan: objective, steps, expected result,
+// acceptance criteria and subtasks. Marks the task as refined (local flag +
+// Jira label "refined" synced) so agents can verify refinement before starting.
+
 const { Command } = require('commander');
 const { access, readFile, writeFile, readdir } = require("node:fs/promises");
 const { join } = require("node:path");
 const prompts = require('prompts');
 
+const REFINED_LABEL = 'refined';
+
 const refineCommand = new Command()
   .command('refine <id>')
-  .description('Refine a task (add details, acceptance criteria, subtasks)')
+  .description('Refine a task into an execution plan (objective, steps, expected result) and mark it as refined')
   .action(async (id) => {
     const cwd = process.cwd();
     const tasksDir = join(cwd, '.ciclo', 'tasks');
@@ -108,7 +114,6 @@ const refineCommand = new Command()
       task.parentChain.forEach((p) => {
         console.log(`  [${p.issueType}] ${p.key} — ${p.summary}`);
         if (p.description) {
-          // indent the parent description for readability
           const lines = p.description.split('\n');
           console.log(`      ${lines[0].slice(0, 100)}${lines.length > 1 ? '…' : ''}`);
         }
@@ -116,7 +121,7 @@ const refineCommand = new Command()
       console.log('');
     }
 
-    // Ask for refined description
+    // --- Execution plan prompts ---
     const descResponse = await prompts({
       type: 'text',
       name: 'description',
@@ -124,46 +129,90 @@ const refineCommand = new Command()
       initial: task.description,
     });
 
-    // Ask for acceptance criteria
+    console.log('\n🎯 Objetivo a ser alcançado (uma frase clara):');
+    const goalResponse = await prompts({
+      type: 'text',
+      name: 'goal',
+      message: 'Objetivo:',
+      initial: task.goal || '',
+    });
+
+    console.log('\n🪜 Passos para execução (press enter on empty line to finish):');
+    const steps = await askArray('Add execution step', task.steps || []);
+
+    console.log('\n📦 Resultado esperado (entregável concreto):');
+    const resultResponse = await prompts({
+      type: 'text',
+      name: 'expectedResult',
+      message: 'Resultado esperado:',
+      initial: task.expectedResult || '',
+    });
+
+    // Acceptance criteria and subtasks (existing behavior, kept)
     console.log('\n📝 Acceptance criteria (press enter on empty line to finish):');
-    const acceptanceCriteria = await askArray('Add acceptance criterion');
+    const acceptanceCriteria = await askArray('Add acceptance criterion', task.acceptanceCriteria || []);
 
-    // Ask for subtasks
     console.log('\n📋 Subtasks (press enter on empty line to finish):');
-    const subtasks = await askArray('Add subtask');
+    const subtasks = await askArray('Add subtask', task.subtasks || []);
 
-    // Update task
+    // Update task with the execution plan + refined flag
     task.description = descResponse.description;
+    task.goal = goalResponse.goal;
+    task.steps = steps;
+    task.expectedResult = resultResponse.expectedResult;
     task.acceptanceCriteria = acceptanceCriteria;
     task.subtasks = subtasks;
+    task.refined = true; // local marker
     task.status = 'refinando';
     task.updatedAt = new Date().toISOString();
 
     // Save
     try {
       await writeFile(taskFile, JSON.stringify(task, null, 2));
-      console.log(`✅ Task ${taskId} refined and status set to refinando.`);
+      console.log(`✅ Task ${taskId} refined and status set to refinando (plan created).`);
     } catch (err) {
       console.error(`✗ Failed to save task: ${err}`);
       process.exit(1);
     }
 
-    // --- Sync refined description to Jira (via ACLI) when this task has a jiraKey ---
+    // --- Sync refined plan to Jira (via ACLI): description + "refined" label ---
     if (task.jiraKey) {
       try {
         const JiraTaskStore = require('../services/JiraTaskStore.js');
         const store = new JiraTaskStore();
         if (store.configured) {
-          const updates = { description: task.description };
-          if (task.acceptanceCriteria && task.acceptanceCriteria.length > 0) {
-            updates.description += '\n\nCritérios de aceitação:\n' + task.acceptanceCriteria.map((c, i) => `- ${c}`).join('\n');
+          // Compose a structured description for Jira from the execution plan
+          let description = task.description || '';
+          if (task.goal) description += `\n\n🎯 Objetivo: ${task.goal}`;
+          if (task.steps && task.steps.length > 0) {
+            description += `\n\n🪜 Passos para execução:\n` + task.steps.map((s) => `- ${s}`).join('\n');
           }
-          await store.updateTask(task.jiraKey, updates);
-          console.log(`   → Descrição sincronizada com o Jira (${task.jiraKey})`);
+          if (task.expectedResult) description += `\n\n📦 Resultado esperado: ${task.expectedResult}`;
+          if (task.acceptanceCriteria && task.acceptanceCriteria.length > 0) {
+            description += `\n\n📝 Critérios de aceitação:\n` + task.acceptanceCriteria.map((c) => `- ${c}`).join('\n');
+          }
+          if (task.subtasks && task.subtasks.length > 0) {
+            description += `\n\n📋 Subtasks:\n` + task.subtasks.map((s) => `- ${s}`).join('\n');
+          }
+
+          // Read current labels (to preserve existing ones) then add "refined"
+          let labels = [];
+          try {
+            const current = await store.getTask(task.jiraKey);
+            labels = (current.labels || []).slice();
+          } catch (_) { /* ignore */ }
+          if (!labels.map((l) => l.toLowerCase()).includes(REFINED_LABEL)) {
+            labels.push(REFINED_LABEL);
+          }
+
+          await store.updateTask(task.jiraKey, { description, labels });
+          console.log(`   → Plano de execução sincronizado com o Jira (${task.jiraKey}) + label "refined"`);
         }
       } catch (err) {
-        console.log(`   ⚠️  Não foi possível sincronizar a descrição no Jira: ${err.message}`);
+        console.log(`   ⚠️  Não foi possível sincronizar o plano no Jira: ${err.message}`);
       }
+    } else {
+      console.log('   ℹ️  Task sem jiraKey — plano salvo apenas localmente (refined).');
     }
   });
 

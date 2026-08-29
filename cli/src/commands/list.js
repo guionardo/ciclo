@@ -46,8 +46,14 @@ const listCommand = new Command()
     console.log('Tasks:');
     tasks.forEach(t => {
       const shortId = t.id.substring(0, 8);
-      console.log(`  ${shortId} – ${t.description} [${t.status}]`);
+      const refinedMark = t.refined ? ' ✅' : (t.jiraKey ? ' ⚠️-sem-refine' : '');
+      console.log(`  ${shortId} – ${t.description} [${t.status}]${refinedMark}`);
     });
+    const unrefined = tasks.filter(t => t.jiraKey && !t.refined);
+    if (unrefined.length > 0) {
+      console.log('\nℹ️  Tasks com jiraKey sem a label "refined":');
+      unrefined.forEach(t => console.log(`   ${t.jiraKey} — rode \`ciclo refine ${t.id.substring(0,8)}\``));
+    }
   });
 
 module.exports = listCommand;
