@@ -2,18 +2,17 @@
 const { Command } = require('commander');
 const { access, readFile, writeFile, readdir } = require("node:fs/promises");
 const { join } = require("node:path");
+const prompts = require('prompts');
+const { jiraToCiclo } = require('../services/statusMap.js');
+const { loadEffectiveConfig, resolveStatusMap } = require('../services/globalConfig.js');
 
 const moveCommand = new Command()
-  .command('move <id> <state>')
-  .description('Move task to a state (local + sync to Jira via ACLI when applicable)')
-  .action(async (id, state) => {
+  .command('move <id> [state]')
+  .description('Move task to a state (local + sync to Jira via ACLI when applicable). Without [state], lists the lanes the issue can adopt.')
+  .action(async (id, state, opts) => {
     const cwd = process.cwd();
     const tasksDir = join(cwd, '.ciclo', 'tasks');
     const validStates = ['backlog', 'refinando', 'pronta', 'em_execução', 'revisao', 'concluida'];
-    if (!validStates.includes(state)) {
-      console.error(`✗ Invalid state: ${state}. Valid states: ${validStates.join(', ')}`);
-      process.exit(1);
-    }
 
     try {
       await access(tasksDir);
@@ -48,10 +47,62 @@ const moveCommand = new Command()
     try {
       const content = await readFile(taskFile, 'utf8');
       task = JSON.parse(content);
-      task.status = state;
+    } catch (err) {
+      console.error(`✗ Failed to read task: ${err}`);
+      process.exit(1);
+    }
+
+    // Effective statusMap (project > global > default)
+    const effectiveConfig = await loadEffectiveConfig(cwd);
+    const statusMap = resolveStatusMap(
+      await readGlobalConfigSafe(),
+      effectiveConfig
+    );
+
+    // Resolve the target state
+    let targetState = state;
+    if (!targetState) {
+      // Discover lanes the issue can adopt (real board lanes when possible)
+      let lanes = validStates;
+      if (task.jiraKey) {
+        try {
+          const JiraTaskStore = require('../services/JiraTaskStore.js');
+          const store = new JiraTaskStore();
+          if (store.configured) {
+            const discovered = await store.getAvailableTransitions(task.jiraKey, statusMap);
+            // discovered returns Jira status names; map them back to ciclo states
+            const mapped = discovered
+              .map((j) => jiraToCiclo(j))
+              .filter((s) => validStates.includes(s));
+            if (mapped.length > 0) lanes = [...new Set(mapped)];
+            console.log(`🗂️  Lanes disponíveis para ${task.jiraKey}: ${discovered.join(' → ') || '(via statusMap configurado)'}`);
+          }
+        } catch (_) { /* keep defaults */ }
+      }
+      const pick = await prompts({
+        type: 'select',
+        name: 'state',
+        message: 'Para qual estado mover?',
+        choices: lanes.map((l) => ({ title: l, value: l })),
+      });
+      if (!pick.state) {
+        console.log('✗ Movimento cancelado.');
+        process.exit(0);
+      }
+      targetState = pick.state;
+      console.log(`   🏷️  Movendo para: ${targetState}`);
+    }
+
+    if (!validStates.includes(targetState)) {
+      console.error(`✗ Invalid state: ${targetState}. Valid states: ${validStates.join(', ')}`);
+      process.exit(1);
+    }
+
+    try {
+      task.status = targetState;
       task.updatedAt = new Date().toISOString();
       await writeFile(taskFile, JSON.stringify(task, null, 2));
-      console.log(`➡️  Moved task ${taskId} to ${state}`);
+      console.log(`➡️  Moved task ${taskId} to ${targetState}`);
     } catch (err) {
       console.error(`✗ Failed to update task: ${err}`);
       process.exit(1);
@@ -60,14 +111,8 @@ const moveCommand = new Command()
     // --- Sync status to Jira (via ACLI) when this task has a jiraKey ---
     if (task.jiraKey) {
       const { cicloToJira } = require('../services/statusMap.js');
-      // Optional per-project override: config.services.jira.statusMap = { pronta: "READY FOR REVIEW", ... }
-      let statusMapOverride = null;
-      const configPath = join(cwd, '.ciclo', 'config.json');
-      try {
-        const config = JSON.parse(await readFile(configPath, 'utf8'));
-        statusMapOverride = config.services?.jira?.statusMap || null;
-      } catch (_) { /* ignore config read issues */ }
-      const jiraStatus = cicloToJira(state, statusMapOverride);
+      // statusMap already merged: project > global > default
+      const jiraStatus = cicloToJira(targetState, statusMap);
       if (jiraStatus) {
         try {
           const JiraTaskStore = require('../services/JiraTaskStore.js');
@@ -82,11 +127,20 @@ const moveCommand = new Command()
           console.log(`   ⚠️  Falha ao sincronizar status no Jira: ${err.message}`);
         }
       } else {
-        console.log(`   ℹ️  Estado "${state}" sem mapeamento Jira — apenas local.`);
+        console.log(`   ℹ️  Estado "${targetState}" sem mapeamento Jira — apenas local.`);
       }
     } else {
       console.log(`   ℹ️  Task sem jiraKey — apenas local.`);
     }
   });
+
+async function readGlobalConfigSafe() {
+  try {
+    const { readGlobalConfig } = require('../services/globalConfig.js');
+    return await readGlobalConfig();
+  } catch (_) {
+    return {};
+  }
+}
 
 module.exports = moveCommand;

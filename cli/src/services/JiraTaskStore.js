@@ -285,6 +285,69 @@ class JiraTaskStore {
       };
     }
   }
+
+  /**
+   * Discover the lanes (statuses) this issue can adopt — i.e. its available
+   * Jira transitions. Boards may have custom lanes, so this is queried from the
+   * Jira REST API when a token is available (global config or JIRA_API_TOKEN),
+   * falling back to the configured statusMap.
+   *
+   * Priority for the token:
+   *   1. global config (~/.ciclo/config.json) → services.jira.apiToken
+   *   2. legacy defaults (~/.hermes/ciclo-defaults.json) → services.jira.apiToken
+   *   3. env JIRA_API_TOKEN
+   *
+   * @param {string} jiraKey - e.g. FW-11
+   * @param {{statusMap?: object}} [statusFallback] - ciclo-state → jira-status map
+   * @returns {Promise<string[]>} array of Jira status/transition names available
+   */
+  async getAvailableTransitions(jiraKey, statusFallback = {}) {
+    const key = String(jiraKey).includes('-') ? jiraKey : `${this.projectKey}-${jiraKey}`;
+    // Try REST discovery when we have a token (OAuth token is in the keyring;
+    // we can also use an explicit API token from config/env).
+    const token = await this._resolveApiToken();
+    if (token && this.baseUrl) {
+      try {
+        const https = require('https');
+        const url = new URL(`${this.baseUrl.replace(/\/+$/, '')}/rest/api/3/issue/${encodeURIComponent(key)}/transitions`);
+        const data = await new Promise((resolve, reject) => {
+          const req = https.request(url, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+          }, (res) => {
+            let body = '';
+            res.on('data', (c) => (body += c));
+            res.on('end', () => {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+              } else {
+                reject(new Error(`HTTP ${res.statusCode}: ${body.slice(0, 120)}`));
+              }
+            });
+          });
+          req.on('error', reject);
+          req.end();
+        });
+        const transitions = (data.transitions || []).map((t) => t.name || t.to?.name).filter(Boolean);
+        if (transitions.length > 0) return transitions;
+      } catch (_) {
+        // REST discovery failed — fall through to configured map
+      }
+    }
+    // Fallback: return the values from the statusMap (default or configured)
+    return Object.values(statusFallback).filter(Boolean);
+  }
+
+  async _resolveApiToken() {
+    if (process.env.JIRA_API_TOKEN) return process.env.JIRA_API_TOKEN;
+    try {
+      const { readGlobalConfig } = require('./globalConfig.js');
+      const cfg = await readGlobalConfig();
+      const tok = cfg.services?.jira?.apiToken;
+      if (tok) return tok;
+    } catch (_) {}
+    return null;
+  }
 }
 
 module.exports = JiraTaskStore;
