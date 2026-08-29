@@ -65,6 +65,61 @@ const startCommand = new Command()
       process.exit(1);
     }
 
+    // --- Sync with Jira (required): keep the task scope aligned with the board ---
+    // Whenever the dev is about to start work on the issue, re-fetch it (plus its
+    // parent chain: story/feature/epic summaries + descriptions) from Jira and
+    // update the local copy BEFORE creating the branch.
+    if (task.jiraKey) {
+      try {
+        const JiraTaskStore = require('../services/JiraTaskStore.js');
+        const { jiraToCiclo } = require('../services/statusMap.js');
+        const store = new JiraTaskStore(cwd);
+        if (store.configured) {
+          const { issue: remote, parentChain } = await store.getTaskWithParents(task.jiraKey);
+          let changed = false;
+          if (remote.summary && remote.summary !== task.description) {
+            console.log(`   ℹ️  Escopo atualizado no Jira: "${task.description}" → "${remote.summary}"`);
+            task.description = remote.summary;
+            changed = true;
+          }
+          if (remote.description && remote.description !== (task.details || '')) {
+            task.details = remote.description;
+            changed = true;
+          }
+          if (parentChain && parentChain.length > 0) {
+            // re-store parent chain (may have changed: new parent, edited descriptions)
+            const current = JSON.stringify(task.parentChain || []);
+            const next = JSON.stringify(parentChain);
+            if (current !== next) {
+              task.parentChain = parentChain;
+              changed = true;
+            }
+          }
+          const jiraStatusCiclo = jiraToCiclo(remote.status || '');
+          if (jiraStatusCiclo && jiraStatusCiclo !== task.status) {
+            console.log(`   ℹ️  Status no Jira diferente (${remote.status}) — local irá para em_execução.`);
+          }
+          if (changed) {
+            task.updatedAt = new Date().toISOString();
+            await writeFile(taskFile, JSON.stringify(task, null, 2));
+            console.log('   🔄 Task re-sincronizada com o Jira (escopo alinhado).');
+          } else {
+            console.log('   ✅ Escopo local já alinhado com o Jira.');
+          }
+          if (parentChain && parentChain.length > 0) {
+            console.log('   🧭 Contexto da cadeia de parents:');
+            parentChain.forEach((p) => {
+              console.log(`      ${p.key} [${p.issueType}] ${p.summary}${p.description ? ' — ' + p.description.slice(0, 60) : ''}`);
+            });
+          }
+        } else {
+          console.log('   ⚠️  ACLI não autenticada — continuando com o escopo local (rode: acli jira auth login --web)');
+        }
+      } catch (err) {
+        console.log(`   ⚠️  Falha ao sincronizar com o Jira: ${err.message}`);
+      }
+    }
+
     // Determine branch name
     const shortId = taskId.substring(0, 8);
     // Slugify description: lowercase, replace non-alphanumeric with hyphens, trim

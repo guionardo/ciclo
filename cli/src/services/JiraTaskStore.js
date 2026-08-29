@@ -137,6 +137,7 @@ class JiraTaskStore {
         created: fields.created || item.created || item.createdAt || null,
         updated: fields.updated || item.updated || item.updatedAt || null,
         issueType: fields.issuetype || item.issueType || item.issuetype || null,
+        parent: fields.parent || item.parent || null,
         labels: fields.labels || item.labels || [],
         self: fields.self || item.self || item.url || null,
       };
@@ -170,6 +171,16 @@ class JiraTaskStore {
         created: raw.created,
         updated: raw.updated,
         issueType: raw.issueType,
+        // parent normalized: { key, summary, issueType } (REST-style parent object)
+        parent: raw.parent && typeof raw.parent === 'object'
+          ? {
+              key: raw.parent.key || '',
+              summary: (raw.parent.fields && raw.parent.fields.summary) || '',
+              issueType: (raw.parent.fields && raw.parent.fields.issuetype)
+                ? (raw.parent.fields.issuetype.name || '')
+                : '',
+            }
+          : (raw.parent || null),
         labels: Array.isArray(raw.labels) ? raw.labels : [],
         self: raw.self,
       };
@@ -184,8 +195,9 @@ class JiraTaskStore {
       throw new Error('Jira via ACLI not configured (authenticate with `acli jira auth login --web`)');
     }
     try {
-      // Explicitly request labels so the repo↔label binding can be validated
-      const data = await this._run(['workitem', 'view', String(key), '--fields', 'key,summary,description,status,assignee,labels,created,updated']);
+      // Explicitly request labels + parent so the repo↔label binding and the
+      // hierarchy (parent chain) can be validated.
+      const data = await this._run(['workitem', 'view', String(key), '--fields', 'key,summary,description,status,assignee,labels,created,updated,parent,issuetype']);
       const items = this._normalizeWorkItems(Array.isArray(data) ? data : [data]);
       if (items.length === 0) {
         throw new Error(`No issue found with key ${key}`);
@@ -194,6 +206,65 @@ class JiraTaskStore {
     } catch (err) {
       throw new Error(`Failed to fetch task ${key}: ${err.message}`);
     }
+  }
+
+  /**
+   * Walk the parent chain of an issue (parent → grandparent → … until Epic/root),
+   * returning each ancestor with its summary, description and issue type.
+   * Used to keep the task scope aligned with the Jira hierarchy (story/feature/epic).
+   * @param {string} jiraKey - issue key (e.g. FW-21)
+   * @param {number} maxDepth - safety limit (default 10)
+   * @returns {Promise<Array<{key: string, issueType: string, summary: string, description: string}>>}
+   *          ordered from the direct parent up to the root ancestor.
+   */
+  async getParentChain(jiraKey, maxDepth = 10) {
+    const chain = [];
+    let currentKey = String(jiraKey).includes('-') ? jiraKey : `${this.projectKey}-${jiraKey}`;
+    const seen = new Set();
+    for (let depth = 0; depth < maxDepth; depth += 1) {
+      if (seen.has(currentKey)) break;
+      seen.add(currentKey);
+      let issue;
+      try {
+        issue = await this.getTask(currentKey);
+      } catch (_) {
+        break; // parent issue may not exist / no permission
+      }
+      if (!issue.parent || !issue.parent.key) break;
+      const parentKey = issue.parent.key;
+      let parent;
+      try {
+        parent = await this.getTask(parentKey);
+      } catch (_) {
+        // fall back to the summarized parent (no description)
+        chain.push({
+          key: issue.parent.key,
+          issueType: issue.parent.issueType || '',
+          summary: issue.parent.summary || '',
+          description: '',
+        });
+        break;
+      }
+      chain.push({
+        key: parent.key,
+        issueType: parent.issueType && parent.issueType.name ? parent.issueType.name : (typeof parent.issueType === 'string' ? parent.issueType : ''),
+        summary: parent.summary || '',
+        description: parent.description || '',
+      });
+      currentKey = parentKey;
+    }
+    return chain;
+  }
+
+  /**
+   * Fetch an issue together with its full parent chain (for local sync).
+   * @param {string} jiraKey
+   * @returns {Promise<{issue: Object, parentChain: Array}>}
+   */
+  async getTaskWithParents(jiraKey) {
+    const issue = await this.getTask(jiraKey);
+    const parentChain = await this.getParentChain(jiraKey);
+    return { issue, parentChain };
   }
 
   async createTask(taskData) {

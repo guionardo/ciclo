@@ -98,7 +98,7 @@ async function fetchFromJira(jiraKey, cwd, tasksDir) {
     }
 
     console.log(`🔍 Fetching ${jiraKey} from Jira...`);
-    const remote = await store.getTask(jiraKey);
+    const { issue: remote, parentChain } = await store.getTaskWithParents(jiraKey);
 
     // Repo binding: issues carrying the repository label belong to this repo.
     const remoteLabels = (remote.labels || []).map((l) => String(l).toLowerCase());
@@ -142,6 +142,10 @@ async function fetchFromJira(jiraKey, cwd, tasksDir) {
       updatedAt: remote.updated ? new Date(remote.updated).toISOString() : new Date().toISOString(),
     };
     if (remote.description) task.details = remote.description;
+    // Save the hierarchy context (parent chain: story/feature/epic summaries + descriptions)
+    if (parentChain && parentChain.length > 0) {
+      task.parentChain = parentChain;
+    }
 
     const taskFile = join(tasksDir, `${taskId}.json`);
     await mkdir(tasksDir, { recursive: true });
@@ -161,6 +165,12 @@ function printTask(task) {
   console.log(`📝 Description: ${task.description}`);
   console.log(`📌 Status: ${task.status}`);
   if (task.details) console.log(`📄 Details: ${task.details}`);
+  if (task.parentChain && task.parentChain.length > 0) {
+    console.log('🧭 Contexto (cadeia de parents):');
+    task.parentChain.forEach((p) => {
+      console.log(`   ${p.key} [${p.issueType}] ${p.summary}${p.description ? ' — ' + p.description.slice(0, 50) : ''}`);
+    });
+  }
 }
 
 /**

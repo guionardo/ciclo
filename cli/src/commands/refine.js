@@ -101,6 +101,21 @@ const refineCommand = new Command()
       }
     }
 
+    // Show parent chain context BEFORE refining (helps the human/agent keep the
+    // task scope aligned with the story/feature/epic in Jira)
+    if (task.parentChain && task.parentChain.length > 0) {
+      console.log('\n🧭 Contexto (cadeia de parents do Jira):');
+      task.parentChain.forEach((p) => {
+        console.log(`  [${p.issueType}] ${p.key} — ${p.summary}`);
+        if (p.description) {
+          // indent the parent description for readability
+          const lines = p.description.split('\n');
+          console.log(`      ${lines[0].slice(0, 100)}${lines.length > 1 ? '…' : ''}`);
+        }
+      });
+      console.log('');
+    }
+
     // Ask for refined description
     const descResponse = await prompts({
       type: 'text',
