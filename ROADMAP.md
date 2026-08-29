@@ -1,77 +1,72 @@
 # ROADMAP — ciclo
 
-Evolução incremental. **Fases 0–5 = piloto local** (um desenvolvedor, sem APIs
-externas); fases seguintes plugam JIRA/GitHub quando houver acesso.
+Evolução incremental. **Parte I — piloto (v0.x)** cobre o fluxo local + integrações
+nativas via CLIs oficiais (ACLI + gh). Fases posteriores adicionam PR automático
+e dashboard.
 
 ---
 
-## Parte I — Piloto local (v0.x)
+## Parte I — Piloto (v0.x)
 
-### Fase 0 — Scaffold do framework (½–1 semana)
-- [ ] Repo/estrutura `ciclo-core`: CLI Node.js + TypeScript (`ciclo`), publicável via `npx @ciclo/cli`
-- [ ] Interfaces `TaskStore` e `VcsAdapter` + `LocalTaskStore`
-- [ ] **Fingerprint do repo**: escanear package.json/workflows/estrutura; *question filtering* no wizard
-- [ ] **Wizard `ciclo init`**: pré-voo → fingerprint → perguntas mínimas → validação de acesso GitHub/Jira (MCP preferencial, fallback CLI/REST; pulável) → resumo
-- [ ] **Escrita transacional**: backup/rollback dos arquivos-alvo; estratégias por arquivo (criar / managed section no AGENTS.md / append no .gitignore / merge no config)
-- [ ] Lockfile `.ciclo/state.json` (versão, fingerprint, respostas); re-run idempotente em modo update
-- [ ] Credenciais em `~/.ciclo/credentials.json` (fora do repo, chmod 600)
-- [ ] Comando `ciclo doctor` (re-valida acessos sob demanda)
-- [ ] Esqueleto do hub de contexto (`context/` com rules da stack detectada) e pasta de decisões da IA (`docs/ciclo/decisoes/`)
-- **Saída:** `npx @ciclo/cli init` dentro de um repo existente cria todos os artefatos sem tocar no código da aplicação; wizard pulável quando serviços indisponíveis.
+### Fase 0 — Framework & wizard ✅
+- [x] CLI Node.js `ciclo` publicável; estrutura do framework
+- [x] Fingerprint do repo (package.json/workflows/estrutura) no `ciclo init`
+- [x] Wizard `ciclo init`: valida/instala as CLIs oficiais (`acli` via Homebrew/curl/apt, `gh` via brew/winget/apt) por SO; exige Jira autenticado via ACLI
+- [x] Escrita transacional (backup/rollback) e idempotente (re-run não duplica `.gitignore`)
+- [x] Lockfile `.ciclo/state.json`; config versionável `.ciclo/config.json` (sem credenciais)
+- [x] Config global do usuário `~/.ciclo/config.json` (`reposDir`, `statusMap`, `apiToken` opcional)
+- [x] `ciclo doctor` (valida ACLI + gh + conexões)
+- [x] AGENTS.md gerenciado com **instruções ao agente** (carregar o ciclo, reposDir, `<reposDir>/<label>`)
+- [x] Esqueleto do hub de contexto (`context/`) e decisões da IA (`docs/ciclo/decisoes/`)
 
-### Fase 1 — Tasks locais (1 semana)
-- [ ] `ciclo new / list / show / move` — CRUD de tasks em arquivos `.md` + `.json`
-- [ ] Workflow de estados com gates (`backlog → … → concluída`)
-- [ ] Registro de eventos em `events.jsonl`
-- [ ] CHANGELOG-IA.md por repo (registro das ações dos agentes)
-- **Saída:** dev piloto gerencia tasks locais com workflow rastreado.
-- **Validação:** criar task, refinar à mão, mover estados, ver histórico.
+### Fase 1 — Tasks locais ✅
+- [x] `ciclo new / list / show / move` — CRUD de tasks em `.ciclo/tasks/*.json`
+- [x] Workflow de estados com normalização Jira↔ciclo (`statusMap`)
+- [x] `ciclo refine` — descrição, critérios de aceitação, subtasks (sincroniza no Jira)
+- [x] `ciclo start` — branch `TASK/<id>-<slug>` + push (gh) + Jira → IN PROGRESS
 
-### Fase 2 — Agente Analista (Hermes) (1 semana)
-- [ ] Prompt/fluxo de refinamento (perguntas → spec estruturada)
-- [ ] Gravação da spec aprovada em `context/specs/`
-- [ ] Transição `backlog → refinando → pronta` com gate humano
-- [ ] Analista consulta decisões anteriores em `docs/ciclo/decisoes/`
-- **Saída:** task bruta entra, spec detalhada sai, aprovada pelo dev piloto.
-- **Validação:** task real de um repo do time refinada ponta-a-ponta.
+### Fase 2 — Integração Jira (ACLI) ✅
+- [x] `JiraTaskStore` via **Atlassian CLI** (view/create/edit/search/transition; OAuth)
+- [x] `ciclo show <chave-jira>` — importa do board com dedupe (jiraKey + repoLabel)
+- [x] Vínculo **repositório ↔ label**: issues criadas com o label; import só do label do repo; pergunta se quer adicionar o label quando falta
+- [x] Hierarquia de issue types (`--type`, default Task) e parent (`--parent`)
+- [x] `ciclo sync` — puxa do Jira as tasks do label do repo
+- [x] `ciclo move` sem estado — descobre as **lanes reais** da issue e pede escolha
+- [x] Sincronização bidirecional de status (`IN PROGRESS`/`IN REVIEW`/`DONE`), `statusMap` custom por board
 
-### Fase 3 — Agente Dev (opencode) (1–2 semanas)
-- [ ] `ciclo start TASK-N`: branch `ciclo/TASK-N` + worktree dedicado
-- [ ] Montagem de contexto no worktree (spec + rules + templates)
-- [ ] Execução do opencode → commits na branch
-- [ ] **Registro obrigatório de decisões** em `docs/ciclo/decisoes/` (formato mini-ADR)
-- [ ] Loop de retrabalho (checklist do reviewer → novos commits)
-- **Saída:** primeira feature implementada sem código humano.
-- **Validação:** diff revisado pelo piloto e mergeado manualmente.
+### Fase 3 — Integração GitHub (gh CLI) ✅
+- [x] `GithubVcsAdapter` via `gh` (auth no keyring; sem `GITHUB_TOKEN`)
+- [x] Push de branch do `ciclo start` quando há remote `origin`
+- [x] `ciclo trabalho <jiraKey>` — clona `<reposDir>/<label>` (gh repo clone), inicializa e sincroniza a issue
+- [ ] `ciclo pr` — abrir PR da branch via `gh pr create` *(próximo)*
 
-### Fase 4 — Review engine (1 semana)
-- [ ] Primeira passada automatizada sobre o diff (`main..ciclo/TASK-N`)
-- [ ] Checklist gravado em `reviews/TASK-N.md` + veredito
-- [ ] Integração com o loop de retrabalho da Fase 3
-- **Saída:** revisão humana chega mais rápida ao merge, com material pronto.
+### Fase 4 — Agentes & instruções ✅
+- [x] `ciclo instrucoes` — consolida AGENTS.md (projeto + global) e skills habilitadas (recursivo em `~/.hermes/skills/`, incl. categorias)
+- [x] `skillsEnabled` persistido no config; skills descobertas e resumidas
+- [ ] Montagem automática do worktree por task com opencode *(parcial — branch direta)*
+- [ ] Loop de retrabalho automatizado reviewer → dev
 
-### Fase 5 — Observabilidade local (1 semana)
-- [ ] `ciclo report`: relatório markdown a partir de `events.jsonl`
-- [ ] Métricas: tempo por estado, retrabalho, custo/token por task
-- **Saída:** visão da evolução das tasks vs. roadmap durante o pilotagem.
+### Fase 5 — Observabilidade ✅ (parcial)
+- [x] `ciclo report` — contagens, idade média, branches ativas, atividade 24h
+- [x] `ciclo report --jira` — mescla dados do Jira (assignee, prioridade, status, labels)
+- [ ] Dashboard React consumindo eventos *(fase posterior)*
 
-## Parte II — Integrações externas (fase 2+ do produto)
+---
 
-Quando houver acesso ao Jira Cloud e GitHub:
+## Parte II — Evolução (fases seguintes)
 
-### Fase 6 — GitHub
-- [ ] `GithubVcsAdapter`: PRs, labels, observação dos workflows Actions (D7)
-- [ ] Deploy: eventos automáticos `deploy.homolog-ok` / `prod-ok` / `falhou`
-- [ ] Task → `concluída` confirmada pelo pipeline
-- [ ] Wizard: geração de rascunho do AGENTS.md lendo as convenções reais do repo (estilo `/init` do Claude Code)
+### Fase 6 — GitHub avançado
+- [ ] `ciclo pr` automático ao concluir revisão
+- [ ] Observação dos workflows Actions (deploy ok/falhou → eventos automáticos)
+- [ ] Geração de rascunho do AGENTS.md lendo convenções reais do repo (estilo `/init` do Claude Code)
 
-### Fase 7 — Jira Cloud
-- [ ] `JiraTaskStore`: espelhamento task local ↔ issue Jira (custom fields)
+### Fase 7 — Jira avançado
 - [ ] Comentários do ciclo viram threads no Jira
+- [ ] Estimativas/assignee round-trip no `refine`
 
-### Fase 8+ — Evolução
-- Dashboard React consumindo os eventos (D5)
-- Multi-dev: fila compartilhada entre pilotos
+### Fase 8+ — Escala
+- Dashboard React (D5)
+- Multi-dev: fila compartilhada
 - Merge assistido com gates maduros
 
 ---
@@ -80,8 +75,9 @@ Quando houver acesso ao Jira Cloud e GitHub:
 
 | Risco | Mitigação |
 |---|---|
-| Specs mal refinadas → código errado | Humano aprova toda spec antes de `pronta` |
-| Agente Dev quebra build repetidamente | Limite de tentativas; escalona p/ humano |
+| Specs mal refinadas → código errado | Humano aprova todo `pronta` |
+| Agente Dev quebra build repetidamente | Limite de tentativas; escala p/ humano |
 | Custo de tokens fora de controle | Log por execução + teto por task |
-| Worktrees conflitam com fluxo manual existente | Branches `ciclo/*` isoladas; merge sempre humano |
-| Framework não colar com o piloto | Dogfooding desde a Fase 1; ajustar workflow conforme feedback |
+| Branches conflitam com fluxo manual | Branches `TASK/*` isoladas; merge sempre humano |
+| Framework não colar com o piloto | Dogfooding desde a Fase 1; ajustar conforme feedback |
+| Label de repo divergir do nome real | `remote origin` configurado OU env `CICLO_REPO_LABEL` |

@@ -31,8 +31,10 @@ por agentes → revisão de código → deploy → observabilidade da evolução
 
 ## Documentos
 
-- [SPEC.md](SPEC.md) — Arquitetura: componentes, fluxo do ciclo, agentes, integrações
-- [ROADMAP.md](ROADMAP.md) — Fases de evolução (Parte I: piloto local; Parte II: integrações)
+- [SPEC.md](SPEC.md) — Arquitetura: componentes, fluxo do ciclo, agentes, integrações (atualizado — ACLI + gh)
+- [ROADMAP.md](ROADMAP.md) — Fases de evolução (Parte I: piloto com CLIs oficiais; Parte II: PR automático/dashboard)
+- [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label)
+- [docs/ciclo/CHANGELOG-IA.md](docs/ciclo/CHANGELOG-IA.md) — registro das ações dos agentes
 
 ---
 

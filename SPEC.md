@@ -6,8 +6,9 @@ padronização) sem vínculo com o cliente.
 
 **Estratégia v0.1 (decisões D8/D9): local-first.** O framework é instalado no
 ambiente de **um desenvolvedor piloto**, que usa o fluxo completo em repositórios
-reais enquanto o framework é refinado. JIRA, GitHub e observabilidade remota são
-integrações posteriores — a arquitetura já nasce preparada para elas via adaptadores.
+reais. As integrações com Jira e GitHub **já são nativas via CLIs oficiais**
+(ACLI + gh), com sessões autenticadas na HOME do usuário — nenhuma credencial
+vive no repositório.
 
 ---
 
@@ -16,269 +17,219 @@ integrações posteriores — a arquitetura já nasce preparada para elas via ad
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         ciclo-core                          │
-│  orquestração: workflow de task, transições, gates, fila    │
+│  orquestração: CLI Node.js (comandos), workflow de tasks,   │
+│  sincronização Jira/GitHub, observabilidade                 │
 ├───────────┬───────────┬───────────┬───────────┬─────────────┤
-│ task-     │ vcs-      │ agentes   │ review-   │ observ-     │
-│ store     │ adapter   │ (runtime) │ engine    │ module      │
-│ (local    │ (git      │ Hermes /  │           │             │
-│ files)    │ local)    │ opencode  │           │             │
+│ task-     │ vcs-      │ agentes   │ config    │ observ-     │
+│ store     │ adapter   │ (runtime) │ global    │ module      │
+│ (local +  │ (git +    │ Hermes /  │ (~/.ciclo │ (report,    │
+│ Jira via  │ gh CLI)   │ opencode  │ + .ciclo  │ --jira)     │
+│ ACLI)     │           │           │ do repo)  │             │
 └───────────┴───────────┴───────────┴───────────┴─────────────┘
-      │            │           │          │           │
-  arquivos     git do       runtimes   diffs +    eventos +
-  .md/.json    projeto      locais     checklist  relatório
-               (repos                   local      markdown
-               existentes)
 ```
 
 ### 1.1 ciclo-core
 
-Núcleo de orquestração, em Node.js + TypeScript. Não conhece JIRA nem GitHub —
-conhece **interfaces** (`TaskStore`, `VcsAdapter`) que hoje têm implementação
-local e amanhã terão implementações remotas.
+Núcleo de orquestração em **Node.js** (CLI `ciclo`). Não conhece a API REST do
+Jira nem tokens do GitHub diretamente — opera através das **CLIs oficiais**:
 
-Responsabilidades:
+| Serviço | CLI | Autenticação | Onde vive a sessão |
+|---|---|---|---|
+| Jira | **acli** (Atlassian CLI) | OAuth (`acli jira auth login --web`) ou API token | `~/.config/acli` |
+| GitHub | **gh** (GitHub CLI) | `gh auth login` | keyring do sistema |
 
-- **Workflow da task** — estados e transições permitidas:
-  `backlog → refinando → pronta → em_execução → em_review → aprovada → deploy → concluída`
-- **Fila de trabalho** — quais tasks estão disponíveis para qual agente, com prioridade.
-- **Regras de gate** — condições para avançar de estado (ex.: `em_review` exige PR/branch;
-  `aprovada` exige revisão humana explícita).
-- **Registro de eventos** — cada transição gera evento (`task.refinada`, `branch.criada`, …)
-  consumido pelo módulo de observabilidade.
+**Princípio central:** credenciais **nunca** ficam no repositório nem no `.env`
+do projeto — a sessão fica na HOME do usuário (mesmo modelo do `gh`). O projeto
+guarda apenas configuração não-sensível em `.ciclo/config.json`.
 
-Implementação: CLI Node.js + TypeScript (`ciclo`), estado em arquivos locais.
-Sem banco na v0.1; se precisar de persistência estruturada futura, SQL Server via
-camada de dados aberta (D6).
+Comandos atuais:
+
+| Comando | Função |
+|---|---|
+| `ciclo init` | wizard/instalação do framework no repo (validando/instalando CLIs) |
+| `ciclo new [desc] --type --parent` | cria task local + issue no Jira (com tipo e hierarquia) |
+| `ciclo list` | lista tasks locais |
+| `ciclo show <id>` | exibe task; se for chave Jira, importa do board (dedupe por label) |
+| `ciclo move <id> [estado]` | muda estado local + sincroniza transition no Jira; sem estado, descobre as lanes |
+| `ciclo start <id>` | cria branch `TASK/<id>-<slug>`, push (gh), Jira → IN PROGRESS |
+| `ciclo refine <id>` | detalha task (descrição, critérios, subtasks) e sincroniza no Jira |
+| `ciclo sync` | puxa do Jira as tasks com o label do repositório |
+| `ciclo trabalho <jiraKey>` | prepara o repo de uma issue (clona + init + sync) |
+| `ciclo report [--jira]` | observabilidade local + dados mesclados do Jira |
+| `ciclo doctor` | valida ACLI + gh + conexões |
+| `ciclo instrucoes [--texto] [--check]` | exibe AGENTS.md + skills passadas ao agente |
 
 ### 1.2 TaskStore (adaptador de tasks)
 
-Interface única para tasks; duas implementações planejadas:
-
-| Implementação | Quando | Armazenamento |
+| Implementação | Status | Armazenamento |
 |---|---|---|
-| `LocalTaskStore` ✅ v0.1 | agora | arquivos `.md` (conteúdo) + `.json` (metadados) num diretório `tasks/`, versionado em git junto ao hub |
-| `JiraTaskStore` ⏳ fase 2+ | quando houver acesso ao Jira Cloud | API REST do Jira, custom fields do ciclo |
+| `LocalTaskStore` | ✅ v0.1 | arquivos `.json` em `.ciclo/tasks/<id>.json` |
+| `JiraTaskStore` | ✅ v0.1 (via **ACLI**) | Jira Cloud via `acli jira workitem` |
 
-A interface cobre: criar/listar/ler/atualizar task, transição de estado,
-adicionar comentário (o comentário local vira thread no Jira depois).
+`JiraTaskStore` usa exclusivamente a ACLI:
 
-Formato da task local:
+- `getTask(key)` → `acli jira workitem view <key> --json`
+- `createTask(data)` → `acli jira workitem create --summary ... --project ... --type ... --label ... --parent ...`
+- `updateTask(id, updates)` → `workitem edit` (summary/description/labels) + `workitem transition` (status)
+- `listTasks(filters)` → `workitem search --jql ... --json`
+- `getAvailableTransitions(key)` → REST `/issue/{key}/transitions` quando há token; senão fallback para o statusMap configurado
+- Converte **ADF** (Atlassian Document Format) da descrição para texto
+
+Task local:
 
 ```
-tasks/
-├── TASK-001.md          # corpo: objetivo, contexto, critérios de aceite
-└── TASK-001.json        # metadados: estado, prioridade, agente, histórico de transições
+.ciclo/tasks/
+├── a1b2c3d4.json        # id local (8 chars), jiraKey, repoLabel, descrição, status, issueType...
 ```
 
 ### 1.3 VcsAdapter (adaptador de versionamento)
 
-Interface para operações de código; implementação v0.1 opera **diretamente no git
-local** dos repositórios existentes do time (D9):
+`GithubVcsAdapter` opera com o **git local + gh CLI**:
 
-- criar branch `ciclo/TASK-001` a partir de `main`
-- commit/push (push só se o repo tiver remoto configurado — funciona offline também)
-- abrir PR: **não existe na v0.1** (sem GitHub na fase inicial); o "PR" local é o
-  próprio branch + diff, revisável pelo humano com `git diff main..ciclo/TASK-001`
-- `GithubVcsAdapter` ⏳ fase 2+: branches, PRs, labels, webhooks, observação dos workflows Actions (D7)
+- branch `TASK/<id>-<slug>` criada a partir da branch atual
+- push para `origin` (usando `gh` autenticado; sem remote, a branch fica local)
+- download/clone de repos via `gh repo clone <label>` (usado pelo `ciclo trabalho`)
+- PR automático: **não implementado ainda** (merge sempre humano na v0.1)
 
 ### 1.4 Agentes (runtimes)
 
-Dois runtimes, papéis distintos:
-
-| Papel | Runtime | Onde roda | Função |
-|---|---|---|---|
-| **Analista** | Hermes Agent | máquina do piloto | criar, detalhar, refinar tasks; validar specs |
-| **Dev** | opencode | diretório de trabalho por task | implementar código a partir da spec refinada |
-| **Reviewer** | Hermes ou opencode | sob demanda | primeira passada de code review no diff |
-
-- Cada agente recebe **somente a spec refinada + contexto do hub**, nunca a task bruta.
-- O agente Dev trabalha num **worktree/diretório dedicado por task**
-  (`git worktree add ../repo-task-001 ciclo/TASK-001`) — isolamento sem clone pesado.
-- Prompts/instruções versionados no repositório do framework (`agents/`),
-  nunca inline no código da orquestração.
-
-### 1.5 Hub de contexto (ideia herdada do L3A)
-
-Diretório compartilhado que dá contexto consistente aos agentes:
-
-```
-context/
-├── AGENTS.md            # regras globais de comportamento dos agentes
-├── specs/               # specs refinadas por task (TASK-001.md)
-├── rules/               # convenções de código, git workflow, erros
-│   ├── typescript.md    # padrões TS/Node (stack principal — D5)
-│   ├── react.md         # componentes, estado, testes de UI
-│   └── sqlserver.md     # migrations, acesso a dados (D6; aberto p/ PostgreSQL/MySQL)
-├── templates/           # scaffolds Node/TS/React, checklist de revisão
-└── docs/                # ADRs, runbooks (incl. workflows GitHub Actions existentes)
-```
-
-Cada repo de produto referencia o hub via `AGENTS.md` próprio.
-
-### 1.6 Review engine
-
-Primeira passada automatizada antes do humano — funciona igual no modo local:
-
-1. Agente Reviewer lê o diff (`main..ciclo/TASK-001`) + spec da task
-2. Produz checklist comentado (corretude vs. spec, convenções do hub,
-   riscos, testes faltantes), gravado em `reviews/TASK-001.md`
-3. Veredito: `ok` ou `mudanças-pedidas` (vira comentário na task e dispara
-   novo ciclo do agente Dev)
-4. Humano revisa com esse material — merge sempre humano na v0.1
-
-### 1.7 Módulo de observabilidade
-
-Consome eventos do ciclo-core (armazenados localmente em `events.jsonl`) e responde:
-
-- **Task-level:** tempo em cada estado, retrabalho (voltas p/ refinamento),
-  taxa de aprovação em primeira revisão
-- **Roadmap:** burndown, throughput semanal, tasks travadas (> N dias num estado)
-- **Agentes:** custo/token por task, taxa de sucesso, tarefas que precisaram
-  intervenção humana
-- Formato v0.1: comando `ciclo report` gera relatório markdown local;
-  dashboard React fica para fase posterior (D5)
-
-### 1.8 Setup & configuração (`ciclo init`)
-
-#### 1.8.1 Como o dev adiciona o framework a um repositório existente
-
-Padrão de mercado (prisma, eslint, firebase, husky, vercel, claude-code-setup):
-**instalar ≠ inicializar**.
-
-```bash
-# Instalação do binário (uma vez): global ou one-shot
-npm install -g @ciclo/cli        # opção A: global
-npx @ciclo/cli init              # opção B: one-shot, sem instalar
-
-# Inicialização (dentro do repositório alvo)
-cd ~/projetos/app-existente
-ciclo init
-```
-
-O `init` **nunca toca no código da aplicação** — só adiciona os artefatos do
-framework (tabela abaixo) e respeita o que já existe.
-
-**Pré-voo:** valida Node ≥ 20, git; detecta opcionais (`gh`, `opencode`,
-servidores MCP) para uso posterior.
-
-**Fingerprint do repo antes de perguntar:** o wizard escaneia `package.json`
-(deps → React/TS/test runner/gerenciador de pacotes), CI existente
-(`.github/workflows/`) e estrutura de pastas. Só pergunta o que não conseguiu
-inferir (padrão *question filtering*). Num repo Node+React típico, as perguntas
-reduzem a: nome do dev, convenção de tasks e quais serviços configurar.
-
-#### 1.8.2 Wizard — passos
-
-1. **Identidade** — nome do dev, confirmação do repo alvo (detectado)
-2. **GitHub** — valida acesso via CLI (`gh auth status`), token ou MCP; pulável
-3. **Jira Cloud** — valida acesso (API `/myself`) via token ou MCP Atlassian; pulável
-4. **Agentes** — runtimes disponíveis (opencode, Hermes), modelos/chaves
-5. **Resumo** — o que foi validado ✅ / pulado ⏭️ + próximos passos sugeridos
-   (ex.: "rode `ciclo new` para criar a primeira task")
-
-#### 1.8.3 Onde cada coisa é gravada
-
-| Conteúdo | Local | Motivo |
+| Papel | Runtime | Função |
 |---|---|---|
-| Config não-sensível | `<repo>/.ciclo/config.json` | versionável, específica do projeto |
-| **Credenciais** (tokens GitHub/Jira, chaves) | `~/.ciclo/credentials.json` (fora de qualquer repo, chmod 600) | compartilhadas entre projetos; nunca commitadas |
-| Lockfile de estado | `<repo>/.ciclo/state.json` | versão do ciclo, hash do fingerprint, respostas do wizard |
-| Eventos e logs | `<repo>/.ciclo/events.jsonl`, `.ciclo/logs/` (gitignored) | rastreabilidade local |
+| **Analista** | Hermes Agent | criar, detalhar, refinar tasks; validar specs |
+| **Dev** | opencode | implementar código a partir da spec refinada |
+| **Reviewer** | Hermes/opencode | primeira passada de code review no diff |
 
-#### 1.8.4 Arquivos criados/modificados no repo alvo
+As instruções repassadas aos agentes são consolidadas em:
 
-| Arquivo | Estratégia |
+- **`AGENTS.md`** do repo (seção gerenciada `<!-- ciclo:begin -->`) com a instrução
+  de **carregar o ciclo a cada início de sessão**, o `reposDir` e a resolução
+  `<reposDir>/<label>` para issues do Jira
+- **Skills** habilitadas em `.ciclo/config.json` (`skillsEnabled`), localizadas em
+  `~/.hermes/skills/` — o comando `ciclo instrucoes` exibe tudo isso
+
+### 1.5 Configuração (dois níveis)
+
+**Config global do usuário** — `~/.ciclo/config.json` (fallback legado:
+`~/.hermes/ciclo-defaults.json`):
+
+```json
+{
+  "reposDir": "/Users/voce/workspace",
+  "services": {
+    "jira": {
+      "siteUrl": "https://voce.atlassian.net",
+      "projectKey": "PROJ",
+      "statusMap": { "em_execução": "IN PROGRESS", "revisao": "IN REVIEW", "concluida": "DONE" },
+      "apiToken": ""   // opcional — habilita REST de transições
+    }
+  }
+}
+```
+
+**Config do projeto** — `.ciclo/config.json` (versionável, sobrescreve o global):
+
+```json
+{
+  "devName": "voce",
+  "taskPrefix": "TASK",
+  "services": { "jira": { "configured": true, "method": "acli", "siteUrl": "...", "projectKey": "FW" } },
+  "skillsEnabled": ["hermes-agent", "autonomous-ai-agents", "coding-agents", "github"],
+  "stack": { ... }
+}
+```
+
+### 1.6 Vínculo repositório ↔ label (Jira)
+
+Cada task sincronizada com o Jira carrega o **label do repositório local**
+(derivado do remote `origin` → nome do repo, ou do nome do diretório;
+sobrescrevível com env `CICLO_REPO_LABEL`):
+
+- **Local → Jira**: `ciclo new` cria a issue com `--label <repo>`.
+- **Jira → Local**: `ciclo show`/`ciclo sync` só consideram issues **com o label
+  deste repo** — dedupe por `jiraKey` + `repoLabel`, ignorando issues de outros repos.
+- **Task sem o label + pasta é repo git**: o ciclo **pergunta se quer adicionar o
+  label** à issue (atualização no Jira).
+
+### 1.7 Hierarquia de issue types
+
+| Nível | Tipo | Pode conter |
+|---|---|---|
+| 1 | **Epic** | Feature, Story, Task, Bug |
+| 2 | **Feature** | Story, Task, Bug |
+| 3 | **Story** | Task, Bug |
+| 4 | **Task** *(default)* | — |
+| 4 | **Bug** | — |
+
+- `ciclo new` pergunta o tipo (default `Task`), aceita `--type` e valida.
+- `--parent <key>` cria o vínculo real de hierarquia no Jira (o Jira valida o scheme).
+
+### 1.8 Mapeamento de status (ciclo ↔ Jira)
+
+| Estado ciclo | Status Jira (default) |
 |---|---|
-| `.ciclo/config.json` | criar (se existir: merge preservando valores do usuário) |
-| `.ciclo/state.json` | criar/sobrescrever (lockfile controlado) |
-| `.gitignore` | append: `.ciclo/logs/`, `.ciclo/events.jsonl`, worktrees |
-| `AGENTS.md` | criar; se existir, injetar **seção gerenciada** entre marcadores `<!-- ciclo:begin -->` / `<!-- ciclo:end -->` preservando o resto |
-| `docs/ciclo/decisoes/` + `CHANGELOG-IA.md` | criar esqueleto se não existirem |
-| `context/` (hub local) | criar rules/templates **da stack detectada** (ex.: React detectado → `rules/react.md` pré-populado) |
+| `backlog` / `refinando` / `pronta` | To Do |
+| `em_execução` | In Progress |
+| `revisao` | In Review |
+| `concluida` | Done |
 
-#### 1.8.5 Segurança da escrita e re-run
+- Sobrescrevível por **`statusMap`** no config global ou do projeto (boards com lanes customizadas).
+- `ciclo move <id>` sem estado **descobre as lanes reais** que a issue pode adotar
+  (`getAvailableTransitions`) e pede a escolha.
 
-- **Transacional:** backup dos arquivos-alvo antes de escrever; qualquer falha ⇒ rollback ao estado exato anterior
-- **Idempotente:** rodar `init` num repo já inicializado entra em modo *update* — diff de versão do framework, novas rules da stack, re-validação de acessos; nunca sobrescreve specs/tasks/decisões existentes
-- **Validação técnica:** preferência por **MCP** (GitHub MCP, Atlassian MCP) quando disponível; fallback para CLI (`gh`, `jira-cli`) ou REST direto; método registrado na config
-- Comando `ciclo doctor`: re-executa todas as validações sob demanda (diagnóstico)
-- Fase 2+: wizard pode também **gerar o rascunho do AGENTS.md lendo o repo** (convenções reais), como faz o `/init` do Claude Code
+### 1.9 Observabilidade
 
-### 1.9 Registro de decisões da IA
+- `ciclo report` — contagens por estado, idade média, branches ativas, atividade 24h.
+- `ciclo report --jira` — mescla dados do Jira (assignee, prioridade, status real, labels)
+  para tasks com `jiraKey` do label do repo; seções por responsável e prioridade.
 
-Cada repo de produto mantém uma pasta de documentação gerada pelo ciclo:
+### 1.10 Registro de decisões da IA
 
 ```
 docs/ciclo/
 ├── decisoes/
-│   ├── 2026-08-26-TASK-001-escolha-biblioteca-x.md   # mini-ADR: contexto, opções, decisão, motivo
-│   └── ...
-└── CHANGELOG-IA.md    # changelog específico do que os agentes fizeram por task
+│   └── 2026-08-29-ADR-001-clis-oficiais-e-vinculo-repo-label.md
+└── CHANGELOG-IA.md
 ```
-
-- O agente Dev é **obrigado** a registrar decisão relevante sempre que escolher
-  entre alternativas (biblioteca, padrão, abordagem) durante a execução da task
-- O agente Analista referencia decisões anteriores ao refinar tasks novas
-- Formato livre mas estruturado (contexto → opções → decisão → consequências)
-- Na fase 2+, essas pastas podem virar PRs/documentação no repositório normalmente
 
 ---
 
-## 2. Fluxo detalhado do ciclo (modo local)
+## 2. Fluxo de trabalho (implementado e validado no piloto)
 
-### Fase A — Criação & refinamento (Hermes)
-1. Task nasce como arquivo local (`ciclo new` ou importada de conversa/agente),
-   estado `backlog`
-2. Agente Analista lê a task bruta, faz perguntas ao dev piloto e propõe uma spec
-   estruturada (objetivo, critérios de aceite, impacto, dependências, plano de teste)
-3. Interação humano↔agente até aprovação; spec aprovada vai para
-   `context/specs/TASK-001.md`; task → `pronta`
+```
+ciclo trabalho FW-123      # (opcional) clona <reposDir>/<label>, init, e importa a issue
+ciclo new "Feature" --type Story --parent FW-9
+                           # → cria local + issue no Jira (label do repo, tipo, parent)
+ciclo refine <id>          # detalha (descrição + critérios) e sincroniza no Jira
+ciclo move <id> em_execução # → local em_execução + Jira IN PROGRESS
+   ...implementação...     # código no branch TASK/<id>-<slug> (push via gh)
+ciclo move <id> revisao    # → Jira IN REVIEW
+ciclo move <id> concluida  # → Jira DONE
+ciclo report --jira        # observabilidade mesclada
+```
 
-### Fase B — Execução (opencode)
-1. `ciclo init` já executado (ver 1.8): credenciais em `~/.ciclo/`, config no repo
-2. `ciclo start TASK-001` cria branch `ciclo/TASK-001` + worktree dedicado
-3. Contexto montado no worktree: spec + rules + templates relevantes
-4. Agente Dev implementa, escreve testes, faz commits na branch e **registra
-   decisões relevantes em `docs/ciclo/decisoes/`** (ver 1.9)
-5. Task → `em_review`
-
-### Fase C — Revisão
-1. Review engine roda primeira passada sobre o diff (ver 1.6)
-2. Se `mudanças-pedidas`: volta para o agente Dev com o checklist → novos commits
-3. Se `ok`: dev piloto revisa o diff e faz merge em `main`; task → `aprovada`
-
-### Fase D — Deploy
-1. Push do repo dispara o pipeline GitHub Actions existente (D7) — fora do controle
-   do framework nesta fase
-2. Na v0.1 o dev confirma manualmente o resultado do deploy; task → `concluída`
-3. Fase 2+: ciclo-core observa os workflows via API e registra eventos automaticamente
-
-### Fase E — Observabilidade contínua
-Eventos alimentam métricas (ver 1.7); `ciclo report` compara roadmap planejado
-vs. executado e destaca gargalos (ex.: "tasks passam em média 3 dias esperando
-revisão humana").
+Gates: transições críticas (`concluida`) continuam exigindo ação humana; merge em
+`main` é sempre manual na v0.1.
 
 ---
 
 ## 3. Segurança & limites dos agentes
 
-- Princípio do menor privilégio: agente Dev só escreve no worktree da sua task;
-  nunca mergeia, nunca toca em `main`
-- Nenhum agente acessa segredos de produção; deploys são sempre via pipeline existente
-- Toda saída de agente é sugestão; estados caros (`aprovada`, deploy prod) exigem ação humana
-- Log completo de prompts/respostas por execução (auditoria), em `.ciclo/logs/`
+- Agente Dev escreve apenas no branch/worktree da sua task; não mergeia sozinho.
+- Nenhuma credencial no repo: sessões em `~/.config/acli` e keyring do `gh`.
+- Tokens opcionais (ex.: `apiToken` do Jira p/ REST de transições) ficam no
+  config **global** (`~/.ciclo/config.json`), nunca no projeto.
+- Toda decisão relevante de agente vira mini-ADR em `docs/ciclo/decisoes/`.
 
 ## 4. Fora de escopo (v0.1)
 
-- Integração com APIs do Jira Cloud e GitHub (fase 2+, via adaptadores)
-- Banco de dados próprio do framework
-- Multi-tenant / múltiplos desenvolvedores simultâneos (piloto único)
-- Merge automático / PR automático
+- PR automático / merge automático (revisão humana obrigatória)
 - Dashboard React
+- Multi-tenant / fila compartilhada
+- Banco de dados próprio do framework
 
-## 5. Perguntas abertas
+## 5. Próximos passos sugeridos
 
-1. Quais repos do time serão alvo das primeiras tasks do piloto?
-2. opencode: versão/config do piloto já definida? (modelos, chaves)
-3. Convenção de numeração de tasks: `TASK-001` global ou por projeto (`PROJ-001`)?
-4. MCP: quais servidores MCP estarão disponíveis nos ambientes dos agentes (GitHub MCP, Atlassian MCP)? O wizard deve detectar ou instalar?
+1. Configurar remote `origin` nos repos do piloto (label passa a usar o nome real
+   do repo; `ciclo start` ganha push automático).
+2. `ciclo pr` — abrir PR da branch via `gh pr create`.
+3. `reposDir` multi-root (mais de um diretório de repos).
