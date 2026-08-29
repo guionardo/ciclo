@@ -13,7 +13,8 @@ const REFINED_LABEL = 'refined';
 const refineCommand = new Command()
   .command('refine <id>')
   .description('Refine a task into an execution plan (objective, steps, expected result) and mark it as refined')
-  .action(async (id) => {
+  .option('-p, --plan <json>', 'Aplicar um plano já aprovado via JSON (sem prompts): {"goal": "...", "steps": [...], "expectedResult": "...", "acceptanceCriteria": [...], "subtasks": [...]}')
+  .action(async (id, opts) => {
     const cwd = process.cwd();
     const tasksDir = join(cwd, '.ciclo', 'tasks');
 
@@ -121,47 +122,75 @@ const refineCommand = new Command()
       console.log('');
     }
 
-    // --- Execution plan prompts ---
-    const descResponse = await prompts({
-      type: 'text',
-      name: 'description',
-      message: 'Refined description:',
-      initial: task.description,
-    });
+    // --- Execution plan: from --plan JSON (agent-assisted, no prompts) or interactive ---
+    let plan = null;
+    if (opts.plan) {
+      try {
+        plan = typeof opts.plan === 'string' ? JSON.parse(opts.plan) : opts.plan;
+      } catch (err) {
+        console.error(`✗ --plan JSON inválido: ${err.message}`);
+        process.exit(1);
+      }
+      console.log('📋 Aplicando plano aprovado (--plan).');
+    }
 
-    console.log('\n🎯 Objetivo a ser alcançado (uma frase clara):');
-    const goalResponse = await prompts({
-      type: 'text',
-      name: 'goal',
-      message: 'Objetivo:',
-      initial: task.goal || '',
-    });
+    if (plan) {
+      // Agent-approved plan: use as-is
+      task.description = plan.description || task.description;
+      task.goal = plan.goal || '';
+      task.steps = Array.isArray(plan.steps) ? plan.steps : [];
+      task.expectedResult = plan.expectedResult || '';
+      task.acceptanceCriteria = Array.isArray(plan.acceptanceCriteria) ? plan.acceptanceCriteria : [];
+      task.subtasks = Array.isArray(plan.subtasks) ? plan.subtasks : [];
+      console.log(`   🎯 Objetivo: ${task.goal}`);
+      if (task.steps.length > 0) {
+        console.log('   🪜 Passos:');
+        task.steps.forEach((s, i) => console.log(`      ${i + 1}. ${s}`));
+      }
+      if (task.expectedResult) console.log(`   📦 Resultado esperado: ${task.expectedResult}`);
+    } else {
+      const descResponse = await prompts({
+        type: 'text',
+        name: 'description',
+        message: 'Refined description:',
+        initial: task.description,
+      });
 
-    console.log('\n🪜 Passos para execução (press enter on empty line to finish):');
-    const steps = await askArray('Add execution step', task.steps || []);
+      console.log('\n🎯 Objetivo a ser alcançado (uma frase clara):');
+      const goalResponse = await prompts({
+        type: 'text',
+        name: 'goal',
+        message: 'Objetivo:',
+        initial: task.goal || '',
+      });
 
-    console.log('\n📦 Resultado esperado (entregável concreto):');
-    const resultResponse = await prompts({
-      type: 'text',
-      name: 'expectedResult',
-      message: 'Resultado esperado:',
-      initial: task.expectedResult || '',
-    });
+      console.log('\n🪜 Passos para execução (press enter on empty line to finish):');
+      const steps = await askArray('Add execution step', task.steps || []);
 
-    // Acceptance criteria and subtasks (existing behavior, kept)
-    console.log('\n📝 Acceptance criteria (press enter on empty line to finish):');
-    const acceptanceCriteria = await askArray('Add acceptance criterion', task.acceptanceCriteria || []);
+      console.log('\n📦 Resultado esperado (entregável concreto):');
+      const resultResponse = await prompts({
+        type: 'text',
+        name: 'expectedResult',
+        message: 'Resultado esperado:',
+        initial: task.expectedResult || '',
+      });
 
-    console.log('\n📋 Subtasks (press enter on empty line to finish):');
-    const subtasks = await askArray('Add subtask', task.subtasks || []);
+      // Acceptance criteria and subtasks (existing behavior, kept)
+      console.log('\n📝 Acceptance criteria (press enter on empty line to finish):');
+      const acceptanceCriteria = await askArray('Add acceptance criterion', task.acceptanceCriteria || []);
 
-    // Update task with the execution plan + refined flag
-    task.description = descResponse.description;
-    task.goal = goalResponse.goal;
-    task.steps = steps;
-    task.expectedResult = resultResponse.expectedResult;
-    task.acceptanceCriteria = acceptanceCriteria;
-    task.subtasks = subtasks;
+      console.log('\n📋 Subtasks (press enter on empty line to finish):');
+      const subtasks = await askArray('Add subtask', task.subtasks || []);
+
+      task.description = descResponse.description;
+      task.goal = goalResponse.goal;
+      task.steps = steps;
+      task.expectedResult = resultResponse.expectedResult;
+      task.acceptanceCriteria = acceptanceCriteria;
+      task.subtasks = subtasks;
+    }
+
+    // Mark refined + save
     task.refined = true; // local marker
     task.status = 'refinando';
     task.updatedAt = new Date().toISOString();

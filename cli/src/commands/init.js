@@ -385,7 +385,13 @@ const initCommand = new Command()
       '`\n' +
       'Quando o usuário indicar uma issue do Jira, o repositório é identificado pela LABEL ' +
       'da issue; o caminho do repositório é `<reposDir>/<label>`. Se o diretório não existir, ' +
-      'solicite ao usuário para cloná-lo ou use `ciclo trabalho <jiraKey>` (clona + inicializa + sincroniza).';
+      'solicite ao usuário para cloná-lo ou use `ciclo trabalho <jiraKey>` (clona + inicializa + sincroniza).\n' +
+      '# Refinamento assistido (agente ↔ dev)\n' +
+      'Quando o dev pedir ajuda para refinar uma task no chat:\n' +
+      '1. Rode `ciclo contexto <id>` para analisar a task, a cadeia de parents (Jira) e o código do projeto.\n' +
+      '2. Proponha um plano estruturado no chat: 🎯 objetivo, 🪜 passos de execução, 📦 resultado esperado e 📝 critérios de aceitação.\n' +
+      '3. SEMPRE peça a aprovação do dev antes de salvar.\n' +
+      '4. Após o dev aprovar, aplique com: `ciclo refine <id> --plan \'{"goal":"...","steps":["..."],"expectedResult":"...","acceptanceCriteria":["..."]}\'` — isso salva localmente e sincroniza o Jira (descrição + label "refined").';
     const agentsSection = `<!-- ciclo:begin -->
 # ciclo
 

@@ -13,6 +13,7 @@ const reportCommand = require('../src/commands/report');
 const doctorCommand = require('../src/commands/doctor');
 const syncCommand = require('../src/commands/sync');
 const workCommand = require('../src/commands/work');
+const contextCommand = require('../src/commands/context');
 const instructionsCommand = require('../src/commands/instructions');
 const refineCommand = require('../src/commands/refine');
 
@@ -31,6 +32,7 @@ program.addCommand(reportCommand);
 program.addCommand(doctorCommand);
 program.addCommand(syncCommand);
 program.addCommand(workCommand);
+program.addCommand(contextCommand);
 program.addCommand(instructionsCommand);
 program.addCommand(refineCommand);
 
