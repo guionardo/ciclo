@@ -149,6 +149,11 @@ sobrescrevível com env `CICLO_REPO_LABEL`):
   deste repo** — dedupe por `jiraKey` + `repoLabel`, ignorando issues de outros repos.
 - **Task sem o label + pasta é repo git**: o ciclo **pergunta se quer adicionar o
   label** à issue (atualização no Jira).
+- **Cadeia de parents**: ao importar (`show`) ou ao iniciar (`start`), a task local
+  também guarda a **cadeia de hierarquia** (Story/Feature/Epic com `summary` +
+  `description` de cada ancestor) em `parentChain`. O `start` re-sincroniza SEMPRE
+  (issue + parentChain) antes de criar a branch, garantindo escopo alinhado ao board;
+  o `refine` exibe essa cadeia como contexto.
 
 ### 1.7 Hierarquia de issue types
 
