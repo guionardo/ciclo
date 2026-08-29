@@ -311,6 +311,7 @@ const initCommand = new Command()
       devName: answers.devName,
       taskPrefix: answers.taskPrefix,
       services: answers.services,
+      skillsEnabled: answers.skillsEnabled || [],
       stack: {
         language: fingerprint.language,
         frameworks: fingerprint.frameworks,

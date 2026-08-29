@@ -241,6 +241,9 @@ ciclo report                 # observabilidade local (estados, idade, branches, 
 ciclo report --jira          # + mescla dados do Jira (assignee, prioridade, status, labels)
 ciclo list                   # tasks locais (inclui as importadas do Jira)
 ciclo doctor                 # valida ACLI + gh + conexões
+ciclo instrucoes             # exibe AGENTS.md (projeto+global) e o resumo das skills habilitadas
+ciclo instrucoes --texto     # inclui o conteúdo integral de cada SKILL.md
+ciclo instrucoes --check     # só lista quais arquivos/skills existem
 ```
 
 ### Hierarquia de issue types (Jira)
