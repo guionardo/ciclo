@@ -12,6 +12,7 @@ const startCommand = require('../src/commands/start');
 const reportCommand = require('../src/commands/report');
 const doctorCommand = require('../src/commands/doctor');
 const syncCommand = require('../src/commands/sync');
+const workCommand = require('../src/commands/work');
 const refineCommand = require('../src/commands/refine');
 
 program
@@ -28,6 +29,7 @@ program.addCommand(startCommand);
 program.addCommand(reportCommand);
 program.addCommand(doctorCommand);
 program.addCommand(syncCommand);
+program.addCommand(workCommand);
 program.addCommand(refineCommand);
 
 program.parse();

@@ -208,6 +208,23 @@ const initCommand = new Command()
         },
       };
 
+      // --- Repos root directory (global config) ---
+      const { readGlobalConfig, resolveReposDir, writeGlobalConfig } = require('../services/globalConfig.js');
+      const globalCfg = await readGlobalConfig();
+      if (!globalCfg.reposDir) {
+        const reposDirPrompt = await prompts({
+          type: 'text',
+          name: 'reposDir',
+          message: 'Diretório raiz onde ficam os repositórios dos projetos:',
+          initial: resolveReposDir(globalCfg),
+        });
+        if (reposDirPrompt.reposDir && reposDirPrompt.reposDir.trim()) {
+          globalCfg.reposDir = reposDirPrompt.reposDir.trim().replace(/^~/, os.homedir());
+          await writeGlobalConfig(globalCfg);
+          console.log(`   📂 reposDir configurado globalmente: ${globalCfg.reposDir}`);
+        }
+      }
+
     } else {
       console.log('🔧 Using defaults (--yes flag) - configuring Jira via ACLI');
       const { check } = await validateJira();
@@ -337,12 +354,27 @@ const initCommand = new Command()
     ].join('\n');
     // We'll handle .gitignore via appendGitignoreAtomic (dedup) later
 
-    // AGENTS.md managed section
+    // AGENTS.md managed section (instructions for AI agents working in this repo)
     const agentsPath = join(cwd, 'AGENTS.md');
+    const agentInstruction =
+      'Ao iniciar qualquer sessão de trabalho neste repositório, CARREGUE o ciclo ' +
+      '(framework de tasks/agentes) conforme as instruções abaixo. ' +
+      'Use `ciclo list` para ver as tasks, `ciclo refinar <id>` para detalhar, ' +
+      '`ciclo iniciar <id>` para começar, e `ciclo mover <id> <estado>` para avançar.\n' +
+      'O diretório raiz onde ficam os repositórios dos projetos é: `' +
+      (userDefaults && userDefaults.reposDir ? userDefaults.reposDir : process.env.CICLO_REPOS_DIR || join(os.homedir(), 'workspace')) +
+      '`\n' +
+      'Quando o usuário indicar uma issue do Jira, o repositório é identificado pela LABEL ' +
+      'da issue; o caminho do repositório é `<reposDir>/<label>`. Se o diretório não existir, ' +
+      'solicite ao usuário para cloná-lo ou use `ciclo trabalho <jiraKey>` (clona + inicializa + sincroniza).';
     const agentsSection = `<!-- ciclo:begin -->
 # ciclo
 
 This section is managed by the ciclo framework. Do not edit manually.
+
+## Instruções para o agente
+
+${agentInstruction}
 
 ## Agents
 - Analista: Hermes Agent (task refinement)
@@ -357,8 +389,9 @@ This section is managed by the ciclo framework. Do not edit manually.
 <!-- ciclo:end -->`;
     // We'll handle AGENTS.md via a custom function that either creates or injects
 
-    // Create .ciclo directory
+    // Create .ciclo directory (+ tasks/)
     await mkdir(join(cwd, '.ciclo'), { recursive: true });
+    await mkdir(join(cwd, '.ciclo', 'tasks'), { recursive: true });
 
     // Backup all target files
     for (const { path } of filesToWrite) {

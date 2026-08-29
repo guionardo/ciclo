@@ -90,6 +90,38 @@ function resolveStatusMap(globalCfg = {}, projectCfg = {}) {
   };
 }
 
+/**
+ * Resolve the root directory where project repositories live.
+ * Priority:
+ *   1. env CICLO_REPOS_DIR
+ *   2. global config `reposDir` (top-level) or `services.jira.reposDir`
+ *   3. legacy defaults `reposDir`
+ *   4. default: ~/workspace
+ * @param {Object} [globalCfg] optional pre-read global config
+ * @returns {string}
+ */
+function resolveReposDir(globalCfg) {
+  if (process.env.CICLO_REPOS_DIR && process.env.CICLO_REPOS_DIR.trim()) {
+    return process.env.CICLO_REPOS_DIR.trim();
+  }
+  const cfg = globalCfg || null;
+  const from = cfg
+    ? (cfg.reposDir || cfg.services?.jira?.reposDir)
+    : null;
+  if (from && String(from).trim()) return String(from).trim();
+  return join(os.homedir(), 'workspace');
+}
+
+/**
+ * Save the global config file (~/.ciclo/config.json).
+ * @param {Object} cfg
+ */
+async function writeGlobalConfig(cfg) {
+  await fs.mkdir(join(os.homedir(), '.ciclo'), { recursive: true });
+  cache = cfg;
+  await fs.writeFile(GLOBAL_CONFIG_PATH, JSON.stringify(cfg, null, 2), 'utf8');
+}
+
 module.exports = {
   GLOBAL_CONFIG_PATH,
   LEGACY_DEFAULTS_PATH,
@@ -98,4 +130,6 @@ module.exports = {
   mergeConfigs,
   loadEffectiveConfig,
   resolveStatusMap,
+  resolveReposDir,
+  writeGlobalConfig,
 };
