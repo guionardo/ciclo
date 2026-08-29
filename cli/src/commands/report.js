@@ -2,6 +2,7 @@
 const { Command } = require('commander');
 const { access, readdir, stat } = require("node:fs/promises");
 const { join } = require("node:path");
+const { jiraToCiclo, CICLO_STATES } = require('../services/statusMap.js');
 
 const reportCommand = new Command()
   .command('report')
@@ -42,8 +43,8 @@ const reportCommand = new Command()
       }
     }
 
-    // Statuses we expect
-    const statuses = ['backlog', 'refinando', 'pronta', 'em_execução', 'revisao', 'concluida'];
+    // Statuses we expect (ciclo states; normalize any Jira-style statuses found)
+    const statuses = CICLO_STATES;
     const stats = {};
     statuses.forEach(s => {
       stats[s] = { count: 0, totalAgeMs: 0, tasks: [] };
@@ -51,12 +52,9 @@ const reportCommand = new Command()
 
     const now = Date.now();
     tasks.forEach(t => {
-      const status = t.status || 'backlog';
+      let status = jiraToCiclo(t.status || 'backlog'); // normalize Jira → ciclo
       if (!stats[status]) {
-        // if unknown status, treat as backlog for safety
-        stats['backlog'].count++;
-        stats['backlog'].tasks.push(t);
-        return;
+        status = 'backlog'; // unknown → backlog
       }
       const created = new Date(t.createdAt || t.updatedAt || now).getTime();
       const ageMs = now - created;

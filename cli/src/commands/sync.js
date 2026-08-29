@@ -38,6 +38,7 @@ const syncCommand = new Command()
 
     const JiraTaskStore = require('../services/JiraTaskStore.js');
     const { getRepoLabel } = require('../services/repoLabel.js');
+    const { jiraToCiclo } = require('../services/statusMap.js');
     const store = new JiraTaskStore();
     if (!store.configured) {
       console.error('✗ ACLI não autenticada. Rode `acli jira auth login --web`.');
@@ -111,7 +112,7 @@ const syncCommand = new Command()
         jiraKey: issue.key,
         repoLabel,
         description: issue.summary,
-        status: (issue.status || 'backlog').toLowerCase().replace(/\s+/g, '_'),
+        status: jiraToCiclo(issue.status),
         createdAt: issue.created ? new Date(issue.created).toISOString() : new Date().toISOString(),
         updatedAt: issue.updated ? new Date(issue.updated).toISOString() : new Date().toISOString(),
       };

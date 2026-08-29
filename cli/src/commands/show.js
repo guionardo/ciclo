@@ -67,6 +67,7 @@ async function fetchFromJira(jiraKey, cwd, tasksDir) {
   try {
     const JiraTaskStore = require('../services/JiraTaskStore.js');
     const { getRepoLabel } = require('../services/repoLabel.js');
+    const { jiraToCiclo } = require('../services/statusMap.js');
     const repoLabel = getRepoLabel(cwd);
     const store = new JiraTaskStore();
     if (!store.configured) {
@@ -136,7 +137,7 @@ async function fetchFromJira(jiraKey, cwd, tasksDir) {
       jiraKey: remote.key,
       repoLabel,
       description: remote.summary,
-      status: (remote.status || 'backlog').toLowerCase().replace(/\s+/g, '_'),
+      status: jiraToCiclo(remote.status),
       createdAt: remote.created ? new Date(remote.created).toISOString() : new Date().toISOString(),
       updatedAt: remote.updated ? new Date(remote.updated).toISOString() : new Date().toISOString(),
     };

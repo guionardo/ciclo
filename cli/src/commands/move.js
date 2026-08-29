@@ -59,15 +59,16 @@ const moveCommand = new Command()
 
     // --- Sync status to Jira (via ACLI) when this task has a jiraKey ---
     if (task.jiraKey) {
-      const jiraStatus = mapCicloToJira(state);
+      const { cicloToJira } = require('../services/statusMap.js');
+      // Optional per-project override: config.services.jira.statusMap = { pronta: "READY FOR REVIEW", ... }
+      let statusMapOverride = null;
+      const configPath = join(cwd, '.ciclo', 'config.json');
+      try {
+        const config = JSON.parse(await readFile(configPath, 'utf8'));
+        statusMapOverride = config.services?.jira?.statusMap || null;
+      } catch (_) { /* ignore config read issues */ }
+      const jiraStatus = cicloToJira(state, statusMapOverride);
       if (jiraStatus) {
-        // Optional per-project override: config.services.jira.statusMap = { pronta: "READY FOR REVIEW", ... }
-        const configPath = join(cwd, '.ciclo', 'config.json');
-        try {
-          const config = JSON.parse(await readFile(configPath, 'utf8'));
-          const custom = config.services?.jira?.statusMap?.[state];
-          if (custom) jiraStatus = custom;
-        } catch (_) { /* ignore config read issues */ }
         try {
           const JiraTaskStore = require('../services/JiraTaskStore.js');
           const store = new JiraTaskStore();
@@ -87,24 +88,5 @@ const moveCommand = new Command()
       console.log(`   ℹ️  Task sem jiraKey — apenas local.`);
     }
   });
-
-/**
- * Map ciclo workflow states to Jira status names.
- * Jira workflows typically use: To Do → In Progress → In Review → Done.
- * States without a meaningful transition (backlog/refinando/pronta) stay in To Do.
- * Override per project via config.services.jira.statusMap (object state -> jira status),
- * e.g. { pronta: "READY FOR CODE REVIEW", concluida: "Closed" }.
- */
-function mapCicloToJira(state) {
-  const map = {
-    'backlog': null, // stays in To Do
-    'refinando': null, // stays in To Do
-    'pronta': null, // stays in To Do (ready to pick up)
-    'em_execução': 'IN PROGRESS',
-    'revisao': 'IN REVIEW',
-    'concluida': 'DONE',
-  };
-  return map[state] || null;
-}
 
 module.exports = moveCommand;
