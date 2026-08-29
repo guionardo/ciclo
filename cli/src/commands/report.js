@@ -6,8 +6,9 @@ const { jiraToCiclo, CICLO_STATES } = require('../services/statusMap.js');
 
 const reportCommand = new Command()
   .command('report')
-  .description('Generate observability report')
-  .action(async () => {
+  .description('Generate observability report (add --jira to merge Jira data)')
+  .option('-j, --jira', 'Merge Jira data (assignee, priority, status, labels) from the board')
+  .action(async (opts) => {
     const cwd = process.cwd();
     const tasksDir = join(cwd, '.ciclo', 'tasks');
 
@@ -43,6 +44,48 @@ const reportCommand = new Command()
       }
     }
 
+    // --- Optional: merge Jira data (report --jira) ---
+    let jiraByKey = new Map(); // jiraKey (lower) -> { assignee, priority, jiraStatus, labels, key }
+    if (opts.jira) {
+      try {
+        const JiraTaskStore = require('../services/JiraTaskStore.js');
+        const { getRepoLabel } = require('../services/repoLabel.js');
+        const store = new JiraTaskStore();
+        if (store.configured) {
+          const issues = await store.listTasks({ repoLabel: getRepoLabel(cwd), limit: 100 });
+          for (const issue of issues) {
+            jiraByKey.set(String(issue.key).toLowerCase(), {
+              key: issue.key,
+              assignee: issue.assignee || '',
+              priority: issue.priority || '',
+              jiraStatus: issue.status || '',
+              labels: issue.labels || [],
+            });
+          }
+        } else {
+          console.log('⚠️  ACLI não autenticada — pulando dados do Jira (rode: acli jira auth login --web)');
+        }
+      } catch (err) {
+        console.log(`⚠️  Não foi possível buscar dados do Jira: ${err.message}`);
+      }
+    }
+
+    // Attach Jira info to local tasks that have a jiraKey
+    for (const t of tasks) {
+      if (t.jiraKey) {
+        const info = jiraByKey.get(String(t.jiraKey).toLowerCase());
+        if (info) {
+          t.jiraAssignee = info.assignee;
+          t.jiraPriority = info.priority;
+          t.jiraStatus = info.jiraStatus;
+          t.jiraLabels = info.labels;
+        } else {
+          // Task has jiraKey but the Jira issue was deleted / belongs elsewhere
+          t.jiraMissing = true;
+        }
+      }
+    }
+
     // Statuses we expect (ciclo states; normalize any Jira-style statuses found)
     const statuses = CICLO_STATES;
     const stats = {};
@@ -66,7 +109,16 @@ const reportCommand = new Command()
     console.log('📊 ciclo observability report');
     console.log('============================');
 
-    console.log(`Total tasks: ${tasks.length}\n`);
+    console.log(`Total tasks: ${tasks.length}`);
+    if (opts.jira) {
+      console.log(`🔄 Dados do Jira: ${jiraByKey.size} issue(s) com o label do repo mescladas`);
+      const missing = tasks.filter(t => t.jiraMissing);
+      if (missing.length > 0) {
+        console.log(`   ⚠️  ${missing.length} task(s) local(is) com jiraKey sem issue correspondente no label do repo`);
+        console.log(`       (o issue pode ter sido apagado ou não ter o label "${getRepoLabelSafe(cwd)}")`);
+      }
+    }
+    console.log('');
 
     console.log('Por estado:');
     statuses.forEach(s => {
@@ -109,7 +161,55 @@ const reportCommand = new Command()
       console.log('');
     }
 
-    console.log('💡 Dica: use `ciclo doctor` para validar configurações de serviço.');
+    // --- Jira summary section (report --jira) ---
+    if (opts.jira) {
+      const jiraTasks = tasks.filter(t => t.jiraKey && !t.jiraMissing);
+      if (jiraTasks.length > 0) {
+        console.log('🔄 Dados do Jira por task:');
+        const pad = (s, n) => String(s || '').padEnd(n);
+        for (const t of jiraTasks) {
+          console.log(`  ${pad(t.id.substring(0,8), 9)} ${pad(t.jiraKey, 8)} ${pad(t.jiraStatus, 12)} ${pad(t.jiraAssignee || '-', 20)} ${pad(t.jiraPriority || '-', 10)} ${t.description.slice(0, 40)}`);
+        }
+        console.log('');
+
+        // By assignee
+        const byAssignee = {};
+        jiraTasks.forEach(t => {
+          const a = t.jiraAssignee || '(sem assignee)';
+          byAssignee[a] = (byAssignee[a] || 0) + 1;
+        });
+        console.log('👤 Por responsável:');
+        Object.entries(byAssignee)
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([a, n]) => console.log(`  ${a}: ${n}`));
+        console.log('');
+
+        // By priority
+        const byPriority = {};
+        jiraTasks.forEach(t => {
+          const p = t.jiraPriority || '(sem prioridade)';
+          byPriority[p] = (byPriority[p] || 0) + 1;
+        });
+        if (Object.keys(byPriority).length > 0) {
+          console.log('🎯 Por prioridade:');
+          Object.entries(byPriority)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([p, n]) => console.log(`  ${p}: ${n}`));
+          console.log('');
+        }
+      }
+    }
+
+    console.log('💡 Dica: use `ciclo doctor` para validar configurações de serviço.');
   });
+
+function getRepoLabelSafe(cwd) {
+  try {
+    const { getRepoLabel } = require('../services/repoLabel.js');
+    return getRepoLabel(cwd);
+  } catch (_) {
+    return '(indefinido)';
+  }
+}
 
 module.exports = reportCommand;

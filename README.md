@@ -233,8 +233,12 @@ ciclo doctor   # mostraria: Jira: ✅ Connection: OK (via ACLI)
 ciclo show FW-123            # busca no Jira e salva localmente (se não existir)
 ciclo new "Minha feature"    # cria localmente E no Jira (projeto do config + label do repo)
 ciclo new "Bugfix" --type Bug # define o tipo de issue (Epic, Feature, Story, Task, Bug)
+ciclo new "Story k8s" --parent FW-9  # vincula a issue pai (hierarquia: Epic→Feature→Story→Task)
 ciclo move <id> em_execução  # atualiza local + sincroniza status no Jira (ação via ACLI)
+ciclo move <id>              # sem estado: descobre as lanes que a issue pode adotar e pergunta
 ciclo sync                   # puxa do Jira as tasks com o label deste repositório
+ciclo report                 # observabilidade local (estados, idade, branches, atividade)
+ciclo report --jira          # + mescla dados do Jira (assignee, prioridade, status, labels)
 ciclo list                   # tasks locais (inclui as importadas do Jira)
 ciclo doctor                 # valida ACLI + gh + conexões
 ```

@@ -15,11 +15,36 @@
 const { execaCommandSync } = require('execa');
 const os = require('node:os');
 const { join } = require('node:path');
-const { existsSync } = require('node:fs');
+const { existsSync, readFileSync } = require('node:fs');
+
+/**
+ * Resolve projectKey with priority:
+ *   1. env JIRA_PROJECT_KEY
+ *   2. project config (.ciclo/config.json → services.jira.projectKey)
+ *   3. global config (~/.ciclo/config.json or ~/.hermes/ciclo-defaults.json)
+ * Falls back to null (callers may pass taskData.project explicitly).
+ */
+function resolveProjectKey(cwd) {
+  if (process.env.JIRA_PROJECT_KEY) return process.env.JIRA_PROJECT_KEY.trim();
+  const candidates = [
+    cwd ? join(cwd, '.ciclo', 'config.json') : null,
+    join(os.homedir(), '.ciclo', 'config.json'),
+    join(os.homedir(), '.hermes', 'ciclo-defaults.json'),
+  ].filter(Boolean);
+  for (const path of candidates) {
+    try {
+      const cfg = JSON.parse(readFileSync(path, 'utf8'));
+      const key = cfg.services?.jira?.projectKey;
+      if (key && String(key).trim()) return String(key).trim();
+    } catch (_) { /* try next */ }
+  }
+  return null;
+}
 
 class JiraTaskStore {
-  constructor() {
-    this.projectKey = process.env.JIRA_PROJECT_KEY || null;
+  constructor(cwd) {
+    this.cwd = cwd || process.cwd();
+    this.projectKey = resolveProjectKey(this.cwd);
     this.acliPath = this._resolveAcli();
     this.configured = !!this.acliPath && this._isAuthenticated();
   }
@@ -108,6 +133,7 @@ class JiraTaskStore {
         description: fields.description !== undefined ? fields.description : item.description,
         status: fields.status || item.status,
         assignee: fields.assignee || item.assignee,
+        priority: fields.priority || item.priority,
         created: fields.created || item.created || item.createdAt || null,
         updated: fields.updated || item.updated || item.updatedAt || null,
         issueType: fields.issuetype || item.issueType || item.issuetype || null,
@@ -138,6 +164,9 @@ class JiraTaskStore {
         description: description !== undefined && description !== null ? description : '',
         status: typeof status === 'string' ? status : '',
         assignee: typeof assignee === 'string' ? assignee : '',
+        priority: raw.priority && typeof raw.priority === 'object'
+          ? (raw.priority.name || '')
+          : (raw.priority || ''),
         created: raw.created,
         updated: raw.updated,
         issueType: raw.issueType,
@@ -265,7 +294,7 @@ class JiraTaskStore {
     }
     const limit = filters.limit || 50;
     try {
-      const data = await this._run(['workitem', 'search', '--jql', JSON.stringify(jql), '--limit', String(limit), '--fields', 'key,summary,status,labels']);
+      const data = await this._run(['workitem', 'search', '--jql', JSON.stringify(jql), '--limit', String(limit), '--fields', 'key,summary,status,labels,assignee,priority,issuetype']);
       return this._normalizeWorkItems(Array.isArray(data) ? data : (data.items || []));
     } catch (err) {
       throw new Error(`Failed to list tasks: ${err.message}`);
