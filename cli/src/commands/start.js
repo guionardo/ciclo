@@ -1,17 +1,17 @@
 // src/commands/start.js
 const { Command } = require('commander');
-const { access, readFile, writeFile } = require("node:fs/promises");
+const { access, readFile, writeFile, readdir } = require("node:fs/promises");
 const { join } = require("node:path");
 const { execa } = require('execa');
 
 const startCommand = new Command()
   .command('start <id>')
-  .description('Start implementation of a task (creates branch and sets status to em_execução)')
+  .description('Start implementation of a task (creates branch, sets em_execução, syncs Jira)')
   .action(async (id) => {
     const cwd = process.cwd();
     const cicloDir = join(cwd, '.ciclo');
     const configPath = join(cicloDir, 'config.json');
-    const taskFile = join(cicloDir, 'tasks', `${id}.json`);
+    const tasksDir = join(cicloDir, 'tasks');
 
     // Check .ciclo exists
     try {
@@ -31,6 +31,29 @@ const startCommand = new Command()
     }
     const taskPrefix = config.taskPrefix || 'TASK';
 
+    // Resolve task id (short prefix → full filename), like show/move/refine
+    let taskId = id;
+    if (id.length < 36) {
+      try {
+        const files = await readdir(tasksDir);
+        const matches = files.filter(f => f.startsWith(id + '.') && f.endsWith('.json'));
+        if (matches.length === 0) {
+          console.error(`✗ No task found with id starting with: ${id}`);
+          process.exit(1);
+        }
+        if (matches.length > 1) {
+          console.error(`✗ Multiple tasks match id prefix ${id}: ${matches.map(m => m.replace('.json','')).join(', ')}`);
+          process.exit(1);
+        }
+        taskId = matches[0].replace('.json', '');
+      } catch (err) {
+        console.error(`✗ Error resolving task id: ${err}`);
+        process.exit(1);
+      }
+    }
+
+    const taskFile = join(tasksDir, `${taskId}.json`);
+
     // Load task
     let task;
     try {
@@ -43,7 +66,7 @@ const startCommand = new Command()
     }
 
     // Determine branch name
-    const shortId = id.substring(0, 8);
+    const shortId = taskId.substring(0, 8);
     // Slugify description: lowercase, replace non-alphanumeric with hyphens, trim
     const slug = task.description
       .toLowerCase()
@@ -107,15 +130,31 @@ const startCommand = new Command()
     task.updatedAt = new Date().toISOString();
     try {
       await writeFile(taskFile, JSON.stringify(task, null, 2));
-      console.log(`📝 Task ${id} status updated to em_execução`);
+      console.log(`📝 Task ${taskId} status updated to em_execução`);
     } catch (err) {
       console.error(`✗ Failed to update task: ${err.message}`);
       process.exit(1);
     }
 
-    console.log(`🚀 Started implementation of task ${id}`);
+    // --- Sync status to Jira (via ACLI) when this task has a jiraKey ---
+    if (task.jiraKey) {
+      try {
+        const JiraTaskStore = require('../services/JiraTaskStore.js');
+        const store = new JiraTaskStore();
+        if (store.configured) {
+          await store.updateTask(task.jiraKey, { status: 'IN PROGRESS' });
+          console.log(`   → Sincronizado com o Jira (${task.jiraKey} → IN PROGRESS)`);
+        } else {
+          console.log(`   ⚠️  ACLI não autenticada — status não sincronizado (rode: acli jira auth login --web)`);
+        }
+      } catch (err) {
+        console.log(`   ⚠️  Falha ao sincronizar status no Jira: ${err.message}`);
+      }
+    }
+
+    console.log(`🚀 Started implementation of task ${taskId}`);
     console.log(`   Branch: ${branchName}`);
-    console.log(`   Next: implement your code, then use \`ciclo move ${id} pronta\` when ready for review.`);
+    console.log(`   Next: implement your code, then use \`ciclo move ${taskId} pronta\` when ready for review.`);
   });
 
 module.exports = startCommand;

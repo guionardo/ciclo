@@ -132,6 +132,24 @@ const refineCommand = new Command()
       console.error(`✗ Failed to save task: ${err}`);
       process.exit(1);
     }
+
+    // --- Sync refined description to Jira (via ACLI) when this task has a jiraKey ---
+    if (task.jiraKey) {
+      try {
+        const JiraTaskStore = require('../services/JiraTaskStore.js');
+        const store = new JiraTaskStore();
+        if (store.configured) {
+          const updates = { description: task.description };
+          if (task.acceptanceCriteria && task.acceptanceCriteria.length > 0) {
+            updates.description += '\n\nCritérios de aceitação:\n' + task.acceptanceCriteria.map((c, i) => `- ${c}`).join('\n');
+          }
+          await store.updateTask(task.jiraKey, updates);
+          console.log(`   → Descrição sincronizada com o Jira (${task.jiraKey})`);
+        }
+      } catch (err) {
+        console.log(`   ⚠️  Não foi possível sincronizar a descrição no Jira: ${err.message}`);
+      }
+    }
   });
 
 module.exports = refineCommand;
