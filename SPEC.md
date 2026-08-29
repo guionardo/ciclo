@@ -51,8 +51,9 @@ Comandos atuais:
 | `ciclo list` | lista tasks locais |
 | `ciclo show <id>` | exibe task; se for chave Jira, importa do board (dedupe por label) |
 | `ciclo move <id> [estado]` | muda estado local + sincroniza transition no Jira; sem estado, descobre as lanes |
-| `ciclo start <id>` | cria branch `TASK/<id>-<slug>`, push (gh), Jira → IN PROGRESS |
-| `ciclo refine <id>` | detalha task (descrição, critérios, subtasks) e sincroniza no Jira |
+| `ciclo start <id>` | cria branch `TASK/<id>-<slug>`, push (gh), Jira → IN PROGRESS; gateia na label `refined` |
+| `ciclo refine <id> [--plan <json>]` | detalha task (descrição, critérios, subtasks) e sincroniza no Jira; `--plan` aplica plano aprovado (label `refined`) |
+| `ciclo contexto <id>` | gera o material de análise p/ refinamento (task + parents Jira + estrutura de código) |
 | `ciclo sync` | puxa do Jira as tasks com o label do repositório |
 | `ciclo trabalho <jiraKey>` | prepara o repo de uma issue (clona + init + sync) |
 | `ciclo report [--jira]` | observabilidade local + dados mesclados do Jira |
@@ -161,6 +162,27 @@ sobrescrevível com env `CICLO_REPO_LABEL`):
     resultado esperado 📦) antes de iniciar; o refine usa a cadeia de parents como
     contexto adicional.
   - `ciclo list`/`ciclo show` indicam o estado de refinamento (✅ / ⚠️-sem-refine).
+- **Label `lang:<stack>` (linguagem do projeto)**:
+  - O fingerprint grava a stack detectada em `.ciclo/config.json` → `stack.language`
+    (typescript, javascript, go, python, rust, php — ver ADR-003).
+  - `JiraTaskStore` adiciona automaticamente `lang:<stack>` nas issues criadas
+    (`createTask`) e atualizadas (`updateTask`), com dedupe via `_ensureLanguageLabel`.
+  - Ex.: repo Go → issue com `['atendente-imoveis', 'lang:go']`, que vira
+    `['atendente-imoveis', 'lang:go', 'refined']` após o refine.
+
+### 1.6.1 Refinamento assistido (agente ↔ dev)
+
+Fluxo definido para o agente refinar tasks com aprovação humana (ADR-002):
+
+1. **Contexto** — o agente roda `ciclo contexto <id>` (task + parents Jira +
+   estrutura de código).
+2. **Proposta** — propõe o plano no chat: 🎯 objetivo · 🪜 passos · 📦 resultado
+   esperado · 📝 critérios de aceitação.
+3. **Aprovação** — o dev aprova/revisa o plano no chat.
+4. **Aplicação** — `ciclo refine <id> --plan '<json>'` salva localmente, marca a
+   task `refinando` e sincroniza o Jira (descrição estruturada + label `refined`).
+
+Essas instruções são gravadas no `AGENTS.md` gerenciado pelo `ciclo init`.
 
 ### 1.7 Hierarquia de issue types
 
@@ -199,7 +221,9 @@ sobrescrevível com env `CICLO_REPO_LABEL`):
 ```
 docs/ciclo/
 ├── decisoes/
-│   └── 2026-08-29-ADR-001-clis-oficiais-e-vinculo-repo-label.md
+│   ├── 2026-08-29-ADR-001-clis-oficiais-e-vinculo-repo-label.md
+│   ├── 2026-08-29-ADR-002-refinamento-assistido-agente-dev.md
+│   └── 2026-08-29-ADR-003-fingerprint-stacks-e-label-linguagem.md
 └── CHANGELOG-IA.md
 ```
 
@@ -210,8 +234,11 @@ docs/ciclo/
 ```
 ciclo trabalho FW-123      # (opcional) clona <reposDir>/<label>, init, e importa a issue
 ciclo new "Feature" --type Story --parent FW-9
-                           # → cria local + issue no Jira (label do repo, tipo, parent)
+                           # → cria local + issue no Jira (label do repo + lang:<stack>, tipo, parent)
+ciclo contexto <id>        # (assistido) agente reúne task + parents + código p/ propor o plano
 ciclo refine <id>          # detalha (descrição + critérios) e sincroniza no Jira
+ciclo refine <id> --plan '<json>'  # (assistido) aplica plano aprovado no chat → label refined
+ciclo start <id>           # gateia na label refined; → branch TASK/<id>-<slug> + Jira IN PROGRESS
 ciclo move <id> em_execução # → local em_execução + Jira IN PROGRESS
    ...implementação...     # código no branch TASK/<id>-<slug> (push via gh)
 ciclo move <id> revisao    # → Jira IN REVIEW

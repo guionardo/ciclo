@@ -2,7 +2,22 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Sincronia com cadeia de parents e docs consolidada
+## 2026-08-29 — Refinamento assistido, fingerprint multi-stack e label de linguagem
+
+- **Refinamento assistido pelo agente** (ADR-002):
+  - `ciclo contexto <id>` reúne task + parents Jira + estrutura de código.
+  - `ciclo refine <id> --plan '<json>'` aplica plano **aprovado pelo dev** (salva
+    local + sincroniza Jira com descrição estruturada e label `refined`).
+  - `ciclo start` gateia a execução na label `refined` (ausente → pergunta ao dev).
+- **Fingerprint multi-stack** (ADR-003): detecção de Go (`go.mod`), Python
+  (`requirements.txt`/`pyproject.toml`), Rust (`Cargo.toml`) e PHP
+  (`composer.json`) além de JS/TS → `stack.language` no `.ciclo/config.json`.
+- **Label `lang:<stack>` no Jira**: `JiraTaskStore` adiciona a label de linguagem
+  em criação e atualização de issues (com dedupe). Validado ponta-a-ponta
+  (FW-28: `lang:go` + `refined`).
+- Estrutura do `JiraTaskStore.js` corrigida (métodos dentro da classe; commit `3a237dd`).
+
+### 2026-08-29 — Sincronia com cadeia de parents e docs consolidada
 
 - **Sincronia de issues agora inclui a cadeia de parents** (Story/Feature/Epic):
   - `getParentChain` sobe a hierarquia até a raiz (key/issueType/summary/description).

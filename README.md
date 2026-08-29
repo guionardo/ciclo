@@ -33,7 +33,7 @@ por agentes → revisão de código → deploy → observabilidade da evolução
 
 - [SPEC.md](SPEC.md) — Arquitetura: componentes, fluxo do ciclo, agentes, integrações (atualizado — ACLI + gh)
 - [ROADMAP.md](ROADMAP.md) — Fases de evolução (Parte I: piloto com CLIs oficiais; Parte II: PR automático/dashboard)
-- [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label)
+- [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label; ADR-002: refinamento assistido agente↔dev; ADR-003: fingerprint multi-stack + label lang)
 - [docs/ciclo/CHANGELOG-IA.md](docs/ciclo/CHANGELOG-IA.md) — registro das ações dos agentes
 
 ---
@@ -233,9 +233,13 @@ ciclo doctor   # mostraria: Jira: ✅ Connection: OK (via ACLI)
 
 ```bash
 ciclo show FW-123            # busca no Jira e salva localmente (se não existir)
-ciclo new "Minha feature"    # cria localmente E no Jira (projeto do config + label do repo)
+ciclo new "Minha feature"    # cria localmente E no Jira (projeto do config + label do repo + lang:<stack>)
 ciclo new "Bugfix" --type Bug # define o tipo de issue (Epic, Feature, Story, Task, Bug)
 ciclo new "Story k8s" --parent FW-9  # vincula a issue pai (hierarquia: Epic→Feature→Story→Task)
+ciclo contexto <id>          # reúne task + parents Jira + estrutura de código (material p/ o agente)
+ciclo refine <id>            # detalha a task (descrição, critérios) e sincroniza no Jira
+ciclo refine <id> --plan '<json>'   # aplica plano aprovado no chat → marca refinada (label "refined")
+ciclo start <id>             # gateia na label refined; branch + Jira IN PROGRESS
 ciclo move <id> em_execução  # atualiza local + sincroniza status no Jira (ação via ACLI)
 ciclo move <id>              # sem estado: descobre as lanes que a issue pode adotar e pergunta
 ciclo sync                   # puxa do Jira as tasks com o label deste repositório
@@ -247,6 +251,24 @@ ciclo instrucoes             # exibe AGENTS.md (projeto+global) e o resumo das s
 ciclo instrucoes --texto     # inclui o conteúdo integral de cada SKILL.md
 ciclo instrucoes --check     # só lista quais arquivos/skills existem
 ```
+
+### Refinamento assistido (agente ↔ dev)
+
+Fluxo para o agente refinar tasks com **aprovação humana** (ADR-002):
+
+1. **Contexto** — o agente roda `ciclo contexto <id>` (task + parents Jira + código).
+2. **Proposta** — propõe o plano no chat (🎯 objetivo · 🪜 passos · 📦 resultado esperado · 📝 critérios).
+3. **Aprovação** — o dev revisa e aprova no chat.
+4. **Aplicação** — `ciclo refine <id> --plan '<json>'` salva local, marca `refinando`
+   e sincroniza o Jira (descrição estruturada + label `refined`).
+
+### Label de linguagem (`lang:<stack>`)
+
+O fingerprint detecta a stack do projeto (`package.json`, `go.mod`,
+`requirements.txt`/`pyproject.toml`, `Cargo.toml`, `composer.json` — ver ADR-003)
+e grava `stack.language` no `.ciclo/config.json`. Cada issue criada no Jira recebe
+a label `lang:<stack>` (ex.: `lang:go`, `lang:python`) junto com o label do repo —
+aplicada também em atualizações, sem duplicar.
 
 ### Hierarquia de issue types (Jira)
 

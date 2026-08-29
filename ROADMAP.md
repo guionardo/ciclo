@@ -11,6 +11,7 @@ e dashboard.
 ### Fase 0 — Framework & wizard ✅
 - [x] CLI Node.js `ciclo` publicável; estrutura do framework
 - [x] Fingerprint do repo (package.json/workflows/estrutura) no `ciclo init`
+- [x] **Fingerprint multi-stack**: Go (`go.mod`), Python (`requirements.txt`/`pyproject.toml`), Rust (`Cargo.toml`), PHP (`composer.json`) além de JS/TS → `stack.language` (ADR-003)
 - [x] Wizard `ciclo init`: valida/instala as CLIs oficiais (`acli` via Homebrew/curl/apt, `gh` via brew/winget/apt) por SO; exige Jira autenticado via ACLI
 - [x] Escrita transacional (backup/rollback) e idempotente (re-run não duplica `.gitignore`)
 - [x] Lockfile `.ciclo/state.json`; config versionável `.ciclo/config.json` (sem credenciais)
@@ -43,6 +44,8 @@ e dashboard.
 ### Fase 4 — Agentes & instruções ✅
 - [x] `ciclo instrucoes` — consolida AGENTS.md (projeto + global) e skills habilitadas (recursivo em `~/.hermes/skills/`, incl. categorias)
 - [x] `skillsEnabled` persistido no config; skills descobertas e resumidas
+- [x] **Refinamento assistido agente ↔ dev**: `ciclo contexto <id>` + `ciclo refine --plan <json>` (aprovação humana) + gate `refined` no `ciclo start` (ADR-002)
+- [x] **Label de linguagem `lang:<stack>`** criada/atualizada automaticamente nas issues do Jira (ADR-003)
 - [ ] Montagem automática do worktree por task com opencode *(parcial — branch direta)*
 - [ ] Loop de retrabalho automatizado reviewer → dev
 
