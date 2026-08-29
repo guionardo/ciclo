@@ -232,11 +232,29 @@ ciclo doctor   # mostraria: Jira: ✅ Connection: OK (via ACLI)
 ```bash
 ciclo show FW-123            # busca no Jira e salva localmente (se não existir)
 ciclo new "Minha feature"    # cria localmente E no Jira (projeto do config + label do repo)
+ciclo new "Bugfix" --type Bug # define o tipo de issue (Epic, Feature, Story, Task, Bug)
 ciclo move <id> em_execução  # atualiza local + sincroniza status no Jira (ação via ACLI)
 ciclo sync                   # puxa do Jira as tasks com o label deste repositório
 ciclo list                   # tasks locais (inclui as importadas do Jira)
 ciclo doctor                 # valida ACLI + gh + conexões
 ```
+
+### Hierarquia de issue types (Jira)
+
+Ao criar uma issue (`ciclo new`), você pode escolher o tipo. **Default: `Task`.**
+
+| Nível | Tipo | Pode conter | Descrição |
+|---|---|---|---|
+| 1 | **Epic** | Feature, Story, Task, Bug | Grande entregável / tema |
+| 2 | **Feature** | Story, Task, Bug | Funcionalidade concreta |
+| 3 | **Story** | Task, Bug | Necessidade com valor de negócio |
+| 4 | **Task** *(default)* | — | Unidade de trabalho |
+| 4 | **Bug** | — | Correção de defeito |
+
+Como escolher:
+- `ciclo new "descrição"` → pergunta o tipo (menu interativo, default `Task`)
+- `ciclo new "descrição" --type Story` → usa direto (aceita minúsculas)
+- Default por projeto: `config.services.jira.issueType = "Story"` (pula o prompt)
 
 ### Vínculo repositório ↔ label
 
