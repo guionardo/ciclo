@@ -289,6 +289,11 @@ class JiraTaskStore {
         const labels = (Array.isArray(taskData.labels) ? taskData.labels : [taskData.labels])
           .map((l) => String(l).trim())
           .filter(Boolean);
+        // Add language label from fingerprint
+        const langLabel = this._getLanguageLabel();
+        if (langLabel && !labels.includes(langLabel)) {
+          labels.push(langLabel);
+        }
         if (labels.length > 0) {
           args.push('--label', labels.join(','));
         }
@@ -333,6 +338,11 @@ class JiraTaskStore {
       }
       if (updates.labels !== undefined && Array.isArray(updates.labels)) {
         const labels = updates.labels.map((l) => String(l).trim()).filter(Boolean);
+        // Add language label from fingerprint
+        const langLabel = this._getLanguageLabel();
+        if (langLabel && !labels.includes(langLabel)) {
+          labels.push(langLabel);
+        }
         if (labels.length > 0) {
           editArgs.push('--labels', labels.join(','));
           hasEdits = true;
@@ -451,6 +461,26 @@ class JiraTaskStore {
       if (tok) return tok;
     } catch (_) {}
     return null;
+  }
+
+  _getLanguageLabel() {
+    try {
+      const configPath = join(this.cwd, '.ciclo', 'config.json');
+      const config = JSON.parse(readFileSync(configPath, 'utf8'));
+      const lang = config.stack?.language;
+      if (lang) return `lang:${lang}`;
+    } catch (_) {
+      // ignore
+    }
+    return null;
+  }
+
+  _ensureLanguageLabel(labels) {
+    const langLabel = this._getLanguageLabel();
+    if (langLabel && !labels.includes(langLabel)) {
+      return [...labels, langLabel];
+    }
+    return labels;
   }
 }
 

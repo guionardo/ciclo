@@ -94,7 +94,43 @@ async function fingerprintRepo(cwd) {
     }
   }
 
-  // 2. Check for GitHub workflows
+  // 2. Non-JS stacks: Go (go.mod), Python (requirements/pyproject), Rust (Cargo), PHP (composer)
+  if (!fingerprint.language) {
+    const goModPath = join(cwd, "go.mod");
+    if (await exists(goModPath)) {
+      fingerprint.language = "go";
+      fingerprint.packageManager = "gomod";
+      try {
+        const goMod = await readFile(goModPath, "utf8");
+        const modLine = goMod.split("\n").find((l) => l.startsWith("module "));
+        if (modLine) fingerprint.packageName = modLine.replace("module ", "").trim();
+      } catch (_) { /* ignore */ }
+      // Go test runner is built-in (`go test`)
+      fingerprint.testRunner = "go test";
+    } else if (await exists(join(cwd, "pyproject.toml"))) {
+      fingerprint.language = "python";
+      fingerprint.packageManager = "poetry";
+      try {
+        const py = await readFile(join(cwd, "pyproject.toml"), "utf8");
+        const name = py.match(/name\s*=\s*["']([^"']+)["']/);
+        if (name) fingerprint.packageName = name[1];
+      } catch (_) { /* ignore */ }
+    } else if (await exists(join(cwd, "requirements.txt"))) {
+      fingerprint.language = "python";
+      fingerprint.packageManager = "pip";
+      fingerprint.packageName = null;
+    } else if (await exists(join(cwd, "Cargo.toml"))) {
+      fingerprint.language = "rust";
+      fingerprint.packageManager = "cargo";
+    } else if (await exists(join(cwd, "composer.json"))) {
+      fingerprint.language = "php";
+      fingerprint.packageManager = "composer";
+      const composer = await readJsonFile(join(cwd, "composer.json"));
+      if (composer) fingerprint.packageName = composer.name ?? null;
+    }
+  }
+
+  // 3. Check for GitHub workflows
   const workflowsDir = join(cwd, ".github", "workflows");
   if (await exists(workflowsDir)) {
     fingerprint.hasGithubWorkflows = true;
