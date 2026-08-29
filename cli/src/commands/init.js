@@ -87,10 +87,14 @@ const initCommand = new Command()
       // ignore
     }
 
-    // Determine default devName: existing config/state, then user defaults, else system user
+    // Determine default devName: global config → existing config/state → user defaults → system user
+    const { readGlobalConfig } = require('../services/globalConfig.js');
+    const globalCfg = await readGlobalConfig();
+    const globalDevName = globalCfg && globalCfg.devName;
     const defaultDevName =
-      (existingConfig && existingConfig.devName) ||
+      (globalDevName) ||
       (existingState && existingState.devName) ||
+      (existingConfig && existingConfig.devName) ||
       (userDefaults && userDefaults.devName) ||
       os.userInfo().username ||
       '';
@@ -142,8 +146,9 @@ const initCommand = new Command()
       answers = {
         ...DEFAULT_ANSWERS,
         devName:
-          (existingConfig && existingConfig.devName) ||
+          (globalDevName) ||
           (existingState && existingState.devName) ||
+          (existingConfig && existingConfig.devName) ||
           (userDefaults && userDefaults.devName) ||
           os.userInfo().username ||
           '',
@@ -153,6 +158,17 @@ const initCommand = new Command()
           (userDefaults && userDefaults.taskPrefix) ||
           'TASK',
       };
+    }
+
+    // Persist devName in the GLOBAL config (~/.ciclo/config.json) — it's per-user,
+    // not per-repo: keeping it out of the project config avoids diffs when
+    // different devs work on the same repository.
+    const devName = answers.devName || os.userInfo().username || '';
+    if (devName && (!globalCfg.devName || globalCfg.devName !== devName)) {
+      const { writeGlobalConfig } = require('../services/globalConfig.js');
+      globalCfg.devName = devName;
+      await writeGlobalConfig(globalCfg);
+      console.log(`   👤 devName gravado no config global: ${devName}`);
     }
 
     // 5. Service configuration (Jira required; GitHub needs no config - checked via gh auth at runtime)
@@ -308,7 +324,6 @@ const initCommand = new Command()
     configPath = join(cwd, '.ciclo', 'config.json');
     let configObj = {
       version: VERSION,
-      devName: answers.devName,
       taskPrefix: answers.taskPrefix,
       services: answers.services,
       skillsEnabled: answers.skillsEnabled || [],
@@ -328,6 +343,9 @@ const initCommand = new Command()
     } catch {
       // ignore
     }
+    // devName belongs to the USER (global config), never to the repo — strip it
+    // from the project config so different devs don't produce diffs.
+    delete configObj.devName;
     filesToWrite.push({
       path: configPath,
       content: JSON.stringify(configObj, null, 2),

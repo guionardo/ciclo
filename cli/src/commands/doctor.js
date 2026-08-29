@@ -30,7 +30,16 @@ const doctorCommand = new Command()
     }
 
     console.log(`📦 ciclo version: ${config.version || 'unknown'}`);
-    console.log(`👨‍💻 Developer name: ${config.devName || '(not set)'}`);
+    // devName lives in the global config (~/.ciclo/config.json), not per-project —
+    // fall back to legacy location in the project config for old setups.
+    let devName = null;
+    try {
+      const { readGlobalConfig } = require('../services/globalConfig.js');
+      const globalCfg = await readGlobalConfig();
+      devName = (globalCfg && globalCfg.devName) || null;
+    } catch (_) { /* no global config */ }
+    if (!devName) devName = config.devName || null;
+    console.log(`👨‍💻 Developer name: ${devName || '(not set — rode ciclo init para configurar no global)'}`);
     console.log(`🏷️  Task prefix: ${config.taskPrefix || 'TASK'}`);
 
     // Services
