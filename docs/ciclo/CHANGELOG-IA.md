@@ -2,7 +2,17 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Refinamento assistido, fingerprint multi-stack e label de linguagem
+## 2026-08-29 — GUIA-DEV e correção dos comandos no AGENTS.md
+
+- **GUIA-DEV.md criado** (`docs/ciclo/GUIA-DEV.md`): instalação da CLI, primeiros
+  comandos, ciclo de vida completo da task, uso pelo agente via prompts (com
+  exemplos de refinamento assistido) e troubleshooting — documentação de
+  referência para o dev que usa o setup.
+- **Correção no `ciclo init`**: o AGENTS.md gerado instruía o agente com
+  `ciclo refinar/iniciar/mover` (nomes em português que não existem). Corrigido
+  para os comandos reais `ciclo refine/start/move` (commit `d3c4e5f`?).
+
+### 2026-08-29 — Refinamento assistido, fingerprint multi-stack e label de linguagem
 
 - **Refinamento assistido pelo agente** (ADR-002):
   - `ciclo contexto <id>` reúne task + parents Jira + estrutura de código.

@@ -378,8 +378,8 @@ const initCommand = new Command()
     const agentInstruction =
       'Ao iniciar qualquer sessão de trabalho neste repositório, CARREGUE o ciclo ' +
       '(framework de tasks/agentes) conforme as instruções abaixo. ' +
-      'Use `ciclo list` para ver as tasks, `ciclo refinar <id>` para detalhar, ' +
-      '`ciclo iniciar <id>` para começar, e `ciclo mover <id> <estado>` para avançar.\n' +
+      'Use `ciclo list` para ver as tasks, `ciclo refine <id>` para detalhar, ' +
+      '`ciclo start <id>` para começar, e `ciclo move <id> <estado>` para avançar.\n' +
       'O diretório raiz onde ficam os repositórios dos projetos é: `' +
       (userDefaults && userDefaults.reposDir ? userDefaults.reposDir : process.env.CICLO_REPOS_DIR || join(os.homedir(), 'workspace')) +
       '`\n' +
