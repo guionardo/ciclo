@@ -10,7 +10,7 @@
   referência para o dev que usa o setup.
 - **Correção no `ciclo init`**: o AGENTS.md gerado instruía o agente com
   `ciclo refinar/iniciar/mover` (nomes em português que não existem). Corrigido
-  para os comandos reais `ciclo refine/start/move` (commit `d3c4e5f`?).
+  para os comandos reais `ciclo refine/start/move` (commit `ecc7258`).
 
 ### 2026-08-29 — Refinamento assistido, fingerprint multi-stack e label de linguagem
 
