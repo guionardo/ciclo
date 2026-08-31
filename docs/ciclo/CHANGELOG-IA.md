@@ -7,7 +7,7 @@
 - **ADR-004 implementado**: as skills do framework são versionadas no repo em
   `skills/<nome>/` (SKILL.md + references/ + templates/ + scripts/), com fonte
   única de verdade para instalação em ambiente novo.
-- **Novos comandos** (commit `c7e2f9a`?):
+- **Novos comandos** (commit `1f53819`):
   - `ciclo skills list` — lista as skills empacotadas.
   - `ciclo skills install [--force]` — copia `skills/` → `~/.hermes/skills/`
     (idempotente; `--force` sobrescreve). Testado com HOME temporário: 13
