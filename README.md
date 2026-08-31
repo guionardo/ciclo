@@ -265,10 +265,11 @@ Fluxo para o agente refinar tasks com **aprovação humana** (ADR-002):
 
 ### Label de linguagem (`lang:<stack>`)
 
-O fingerprint detecta a stack do projeto (`package.json`, `go.mod`,
-`requirements.txt`/`pyproject.toml`, `Cargo.toml`, `composer.json` — ver ADR-003)
+O fingerprint detecta a stack do projeto (`package.json`, `*.sln`/`*.csproj`/
+`global.json` (**.NET**), `go.mod`, `requirements.txt`/`pyproject.toml`,
+`Cargo.toml`, `composer.json` — ver ADR-003)
 e grava `stack.language` no `.ciclo/config.json`. Cada issue criada no Jira recebe
-a label `lang:<stack>` (ex.: `lang:go`, `lang:python`) junto com o label do repo —
+a label `lang:<stack>` (ex.: `lang:dotnet`, `lang:go`, `lang:python`) junto com o label do repo —
 aplicada também em atualizações, sem duplicar.
 
 ### Hierarquia de issue types (Jira)

@@ -11,7 +11,7 @@ e dashboard.
 ### Fase 0 — Framework & wizard ✅
 - [x] CLI Node.js `ciclo` publicável; estrutura do framework
 - [x] Fingerprint do repo (package.json/workflows/estrutura) no `ciclo init`
-- [x] **Fingerprint multi-stack**: Go (`go.mod`), Python (`requirements.txt`/`pyproject.toml`), Rust (`Cargo.toml`), PHP (`composer.json`) além de JS/TS → `stack.language` (ADR-003)
+- [x] **Fingerprint multi-stack**: .NET (`*.sln`/`*.csproj`/`global.json`), Go (`go.mod`), Python (`requirements.txt`/`pyproject.toml`), Rust (`Cargo.toml`), PHP (`composer.json`) além de JS/TS → `stack.language` (ADR-003)
 - [x] Wizard `ciclo init`: valida/instala as CLIs oficiais (`acli` via Homebrew/curl/apt, `gh` via brew/winget/apt) por SO; exige Jira autenticado via ACLI
 - [x] Escrita transacional (backup/rollback) e idempotente (re-run não duplica `.gitignore`)
 - [x] Lockfile `.ciclo/state.json`; config versionável `.ciclo/config.json` (sem credenciais)

@@ -164,7 +164,7 @@ sobrescrevível com env `CICLO_REPO_LABEL`):
   - `ciclo list`/`ciclo show` indicam o estado de refinamento (✅ / ⚠️-sem-refine).
 - **Label `lang:<stack>` (linguagem do projeto)**:
   - O fingerprint grava a stack detectada em `.ciclo/config.json` → `stack.language`
-    (typescript, javascript, go, python, rust, php — ver ADR-003).
+    (typescript, javascript, **dotnet**, go, python, rust, php — ver ADR-003).
   - `JiraTaskStore` adiciona automaticamente `lang:<stack>` nas issues criadas
     (`createTask`) e atualizadas (`updateTask`), com dedupe via `_ensureLanguageLabel`.
   - Ex.: repo Go → issue com `['atendente-imoveis', 'lang:go']`, que vira

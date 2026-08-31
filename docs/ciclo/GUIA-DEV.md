@@ -210,7 +210,7 @@ Toda issue criada pelo ciclo carrega:
 | Label | Origem | Exemplo |
 |---|---|---|
 | `<repo>` | vínculo repositório ↔ label (remote `origin`; env `CICLO_REPO_LABEL` para override) | `atendente-imoveis` |
-| `lang:<stack>` | fingerprint do projeto (`stack.language`) | `lang:go`, `lang:python`, `lang:ts` |
+| `lang:<stack>` | fingerprint do projeto (`stack.language`) | `lang:dotnet`, `lang:go`, `lang:python`, `lang:ts` |
 | `refined` | adicionada pelo `refine` (prontidão para execução) | `refined` |
 
 As labels servem para filtrar boards e o `ciclo sync` usa a `label do repo` para

@@ -22,6 +22,7 @@ O fingerprint passa a detectar, por ordem de prioridade:
 |---|---|---|
 | TypeScript | `package.json` + `tsconfig.json` | `typescript` |
 | JavaScript | `package.json` (sem tsconfig) | `javascript` |
+| **.NET** | `*.sln`/`*.slnx`, `*.csproj`/`*.fsproj`/`*.vbproj`, `global.json`, `nuget.config`, `Directory.Build.props` | `dotnet` |
 | **Go** | `go.mod` | `go` |
 | **Python** | `requirements.txt` / `pyproject.toml` (poetry/uv) | `python` |
 | **Rust** | `Cargo.toml` | `rust` |

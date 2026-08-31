@@ -1,5 +1,5 @@
 // fingerprint.js - detects repository characteristics
-const { access, readFile } = require("node:fs/promises");
+const { access, readFile, readdir } = require("node:fs/promises");
 const { join } = require("node:path");
 const { createHash } = require("node:crypto");
 
@@ -18,6 +18,20 @@ async function readJsonFile(filePath) {
     return JSON.parse(content);
   } catch {
     return null;
+  }
+}
+
+// True if any regular file in the directory matches one of the extensions (lowercased)
+async function dirHasExtension(cwd, extensions) {
+  try {
+    const entries = await readdir(cwd, { withFileTypes: true });
+    return entries.some(
+      (e) =>
+        e.isFile() &&
+        extensions.some((ext) => e.name.toLowerCase().endsWith(ext))
+    );
+  } catch {
+    return false;
   }
 }
 
@@ -94,10 +108,37 @@ async function fingerprintRepo(cwd) {
     }
   }
 
-  // 2. Non-JS stacks: Go (go.mod), Python (requirements/pyproject), Rust (Cargo), PHP (composer)
+  // 2. Non-JS stacks: .NET (sln/csproj/global.json), Go (go.mod), Python (requirements/pyproject), Rust (Cargo), PHP (composer)
   if (!fingerprint.language) {
-    const goModPath = join(cwd, "go.mod");
-    if (await exists(goModPath)) {
+    // .NET: solution/project files at repo root, SDK pin or NuGet config
+    const dotnetHints = [
+      "global.json",
+      "nuget.config",
+      "Directory.Build.props",
+      "Directory.Package.props",
+    ];
+    const dotnetFound =
+      (await dirHasExtension(cwd, [".sln", ".slnx", ".csproj", ".fsproj", ".vbproj"])) ||
+      (await Promise.all(dotnetHints.map((h) => exists(join(cwd, h))))).some(Boolean);
+    if (dotnetFound) {
+      fingerprint.language = "dotnet";
+      fingerprint.packageManager = "nuget";
+      fingerprint.testRunner = "dotnet test";
+      // Best-effort package name from the first project file at the root
+      const projExts = [".csproj", ".fsproj", ".vbproj"];
+      const entries = await readdir(cwd, { withFileTypes: true });
+      const proj = entries.find(
+        (e) => e.isFile() && projExts.some((ext) => e.name.toLowerCase().endsWith(ext))
+      );
+      if (proj) {
+        try {
+          const xml = await readFile(join(cwd, proj.name), "utf8");
+          const match = xml.match(/<AssemblyName>([^<]+)<\/AssemblyName>/) ||
+                        xml.match(/<RootNamespace>([^<]+)<\/RootNamespace>/);
+          if (match) fingerprint.packageName = match[1].trim();
+        } catch (_) { /* ignore */ }
+      }
+    } else if (await exists(join(cwd, "go.mod"))) {
       fingerprint.language = "go";
       fingerprint.packageManager = "gomod";
       try {
