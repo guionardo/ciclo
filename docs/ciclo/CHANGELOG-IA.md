@@ -6,7 +6,7 @@
 
 - **Fingerprint passa a detectar .NET** (`language: dotnet`): marcadores
   `*.sln`/`*.slnx`, `*.csproj`/`*.fsproj`/`*.vbproj`, `global.json`,
-  `nuget.config` e `Directory.Build.props` (commit `a8f3c2d`?). Testado
+  `nuget.config` e `Directory.Build.props` (commit `764a482`). Testado
   ponta-a-ponta: repo .NET → `ciclo init -y` gravou `stack.language: "dotnet"`
   → task criada no Jira com label `lang:dotnet` (FW-29, removida após o teste).
 
