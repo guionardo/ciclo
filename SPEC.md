@@ -54,6 +54,8 @@ Comandos atuais:
 | `ciclo start <id>` | cria branch `TASK/<id>-<slug>`, push (gh), Jira → IN PROGRESS; gateia na label `refined` |
 | `ciclo refine <id> [--plan <json>]` | detalha task (descrição, critérios, subtasks) e sincroniza no Jira; `--plan` aplica plano aprovado (label `refined`) |
 | `ciclo contexto <id>` | gera o material de análise p/ refinamento (task + parents Jira + estrutura de código) |
+| `ciclo skills list` | lista as skills empacotadas no repo do framework |
+| `ciclo skills install [--force]` | instala as skills do framework em `~/.hermes/skills/` (setup de ambiente novo) |
 | `ciclo sync` | puxa do Jira as tasks com o label do repositório |
 | `ciclo trabalho <jiraKey>` | prepara o repo de uma issue (clona + init + sync) |
 | `ciclo report [--jira]` | observabilidade local + dados mesclados do Jira |
@@ -107,6 +109,9 @@ As instruções repassadas aos agentes são consolidadas em:
   `<reposDir>/<label>` para issues do Jira
 - **Skills** habilitadas em `.ciclo/config.json` (`skillsEnabled`), localizadas em
   `~/.hermes/skills/` — o comando `ciclo instrucoes` exibe tudo isso
+- As skills do framework são **versionadas no repo** em `skills/<nome>/` e
+  instaladas no ambiente com `ciclo skills install` (ver ADR-004) — setup de
+  máquina nova: clone + `npm link` + `ciclo skills install`
 
 ### 1.5 Configuração (dois níveis)
 
@@ -223,7 +228,8 @@ docs/ciclo/
 ├── decisoes/
 │   ├── 2026-08-29-ADR-001-clis-oficiais-e-vinculo-repo-label.md
 │   ├── 2026-08-29-ADR-002-refinamento-assistido-agente-dev.md
-│   └── 2026-08-29-ADR-003-fingerprint-stacks-e-label-linguagem.md
+│   ├── 2026-08-29-ADR-003-fingerprint-stacks-e-label-linguagem.md
+│   └── 2026-08-29-ADR-004-skills-empacotadas-no-framework.md
 └── CHANGELOG-IA.md
 ```
 

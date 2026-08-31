@@ -16,6 +16,7 @@ const workCommand = require('../src/commands/work');
 const contextCommand = require('../src/commands/context');
 const instructionsCommand = require('../src/commands/instructions');
 const refineCommand = require('../src/commands/refine');
+const skillsCommand = require('../src/commands/skills');
 
 program
  .name('ciclo')
@@ -35,5 +36,6 @@ program.addCommand(workCommand);
 program.addCommand(contextCommand);
 program.addCommand(instructionsCommand);
 program.addCommand(refineCommand);
+program.addCommand(skillsCommand);
 
 program.parse();

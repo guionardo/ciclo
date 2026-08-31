@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "devName": "DEVELOPER_NAME",
+  "taskPrefix": "TASK",
+  "services": {
+    "github": { "configured": false, "method": null },
+    "jira": { "configured": false, "method": null, "siteUrl": null }
+  },
+  "stack": {
+    "language": null,
+    "frameworks": [],
+    "testRunner": null,
+    "packageManager": null
+  }
+}

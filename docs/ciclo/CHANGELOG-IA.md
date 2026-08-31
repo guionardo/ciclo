@@ -2,7 +2,21 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Fingerprint .NET (dotnet) adicionado
+## 2026-08-29 — Skills empacotadas no framework (ciclo skills install)
+
+- **ADR-004 implementado**: as skills do framework são versionadas no repo em
+  `skills/<nome>/` (SKILL.md + references/ + templates/ + scripts/), com fonte
+  única de verdade para instalação em ambiente novo.
+- **Novos comandos** (commit `c7e2f9a`?):
+  - `ciclo skills list` — lista as skills empacotadas.
+  - `ciclo skills install [--force]` — copia `skills/` → `~/.hermes/skills/`
+    (idempotente; `--force` sobrescreve). Testado com HOME temporário: 13
+    arquivos instalados, 2ª execução pula sem `--force`.
+- **Skill `ciclo-framework-setup`** empacotada no repo.
+- Docs: SPEC (tabela de comandos + seção agentes + índice de ADRs), README
+  (instalação + documentos), GUIA-DEV (seção 1.3 instalando skills).
+
+### 2026-08-29 — Fingerprint .NET (dotnet) adicionado
 
 - **Fingerprint passa a detectar .NET** (`language: dotnet`): marcadores
   `*.sln`/`*.slnx`, `*.csproj`/`*.fsproj`/`*.vbproj`, `global.json`,

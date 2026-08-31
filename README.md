@@ -34,8 +34,9 @@ por agentes → revisão de código → deploy → observabilidade da evolução
 - [SPEC.md](SPEC.md) — Arquitetura: componentes, fluxo do ciclo, agentes, integrações (atualizado — ACLI + gh)
 - [ROADMAP.md](ROADMAP.md) — Fases de evolução (Parte I: piloto com CLIs oficiais; Parte II: PR automático/dashboard)
 - [docs/ciclo/GUIA-DEV.md](docs/ciclo/GUIA-DEV.md) — **guia prático do desenvolvedor**: instalação, primeiros comandos, fluxo do dia a dia e uso pelo agente (prompts + exemplos)
-- [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label; ADR-002: refinamento assistido agente↔dev; ADR-003: fingerprint multi-stack + label lang)
+- [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label; ADR-002: refinamento assistido agente↔dev; ADR-003: fingerprint multi-stack + label lang; ADR-004: skills empacotadas no framework)
 - [docs/ciclo/CHANGELOG-IA.md](docs/ciclo/CHANGELOG-IA.md) — registro das ações dos agentes
+- [skills/](skills/) — skills do framework empacotadas (instaladas com `ciclo skills install`)
 
 ---
 
@@ -192,7 +193,14 @@ gh auth status
     - Com bun: `bun link`
     - Com pnpm: `pnpm link --global`
 
-4. Inicialize em um projeto:
+4. Instale as skills do framework no Hermes (ambiente novo):
+    ```bash
+    ciclo skills install      # copia skills/ → ~/.hermes/skills/
+    ciclo skills list         # vê o que foi empacotado
+    # --force sobrescreve versões existentes
+    ```
+
+5. Inicialize em um projeto:
     ```bash
     cd /caminho/para/seu/projeto
     ciclo init          # wizard interativo (instala CLIs se faltarem, configura Jira)

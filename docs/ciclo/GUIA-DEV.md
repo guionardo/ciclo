@@ -33,7 +33,21 @@ npm link             # expõe o comando `ciclo` globalmente (ou bun link / pnpm 
 ciclo --version      # valida a instalação
 ```
 
-### 1.3 Inicializar um projeto
+### 1.3 Instalar as skills do framework (ambiente novo)
+
+As skills que instruem o agente sobre o ciclo são **versionadas no repo** (em
+`skills/`) — em uma máquina nova, instale-as no Hermes:
+
+```bash
+ciclo skills install      # copia skills/ → ~/.hermes/skills/
+ciclo skills list         # vê o que foi empacotado no framework
+# --force sobrescreve versões existentes (para atualizar)
+```
+
+> Sem isso, o Hermes não encontra as skills locais do ciclo (ex.:
+> `ciclo-framework-setup`) num ambiente novo.
+
+### 1.4 Inicializar um projeto
 
 Entre na pasta do repositório onde você vai trabalhar e rode:
 
@@ -237,4 +251,5 @@ saber quais issues pertencem a este repositório (dedupe por `jiraKey` + `repoLa
 - [ADR-001](decisoes/2026-08-29-ADR-001-clis-oficiais-e-vinculo-repo-label.md) — CLIs oficiais e vínculo repo↔label
 - [ADR-002](decisoes/2026-08-29-ADR-002-refinamento-assistido-agente-dev.md) — refinamento assistido agente↔dev
 - [ADR-003](decisoes/2026-08-29-ADR-003-fingerprint-stacks-e-label-linguagem.md) — fingerprint multi-stack + label `lang:<stack>`
+- [ADR-004](decisoes/2026-08-29-ADR-004-skills-empacotadas-no-framework.md) — skills empacotadas no framework (`ciclo skills install`)
 - [CHANGELOG-IA.md](CHANGELOG-IA.md) — histórico das decisões dos agentes
