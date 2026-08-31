@@ -12,7 +12,7 @@
 // If the acli binary or authentication is missing, the store reports
 // configure=false and callers can fall back to local-only mode.
 
-const { execaCommandSync } = require('execa');
+const { execaSync, execaCommandSync } = require('execa');
 const os = require('node:os');
 const { join } = require('node:path');
 const { existsSync, readFileSync } = require('node:fs');
@@ -83,7 +83,7 @@ class JiraTaskStore {
   _isAuthenticated() {
     if (!this.acliPath) return false;
     try {
-      execaCommandSync(`${this.acliPath} jira auth status`, { shell: true });
+      execaSync(this.acliPath, ['jira', 'auth', 'status']);
       return true;
     } catch (_) {
       return false;
@@ -99,9 +99,11 @@ class JiraTaskStore {
     if (!this.acliPath) {
       throw new Error('acli binary not found. Install it: brew tap atlassian/homebrew-acli && brew install acli');
     }
-    const cmd = `${this.acliPath} jira ${args.join(' ')} --json`;
     try {
-      const { stdout } = execaCommandSync(cmd, { shell: true });
+      // Run WITHOUT shell: pass args as an array so values with spaces/newlines
+      // (e.g. descriptions with real line breaks) arrive verbatim. No JSON.stringify
+      // escaping needed — that turned '\n' into literal backslash-n in Jira.
+      const { stdout } = execaSync(this.acliPath, ['jira', ...args, '--json']);
       return JSON.parse(stdout);
     } catch (err) {
       const stderr = err.stderr || err.message || '';
@@ -278,12 +280,12 @@ class JiraTaskStore {
     try {
       const args = [
         'workitem', 'create',
-        '--summary', JSON.stringify(taskData.summary || 'No summary'),
+        '--summary', String(taskData.summary || 'No summary'),
         '--project', String(project),
-        '--type', JSON.stringify(taskData.issueType || 'Task'),
+        '--type', String(taskData.issueType || 'Task'),
       ];
       if (taskData.description) {
-        args.push('--description', JSON.stringify(taskData.description));
+        args.push('--description', String(taskData.description));
       }
       if (taskData.labels && taskData.labels.length > 0) {
         const labels = (Array.isArray(taskData.labels) ? taskData.labels : [taskData.labels])
@@ -323,17 +325,17 @@ class JiraTaskStore {
     try {
       // Status changes go through the transition command
       if (updates.status !== undefined) {
-        await this._run(['workitem', 'transition', '--key', String(key), '--status', JSON.stringify(updates.status), '--yes']);
+        await this._run(['workitem', 'transition', '--key', String(key), '--status', String(updates.status), '--yes']);
       }
       // Field edits (summary/description/labels) only if at least one editable flag is present
       const editArgs = ['workitem', 'edit', '--key', String(key)];
       let hasEdits = false;
       if (updates.summary !== undefined) {
-        editArgs.push('--summary', JSON.stringify(updates.summary));
+        editArgs.push('--summary', String(updates.summary));
         hasEdits = true;
       }
       if (updates.description !== undefined) {
-        editArgs.push('--description', JSON.stringify(updates.description));
+        editArgs.push('--description', String(updates.description));
         hasEdits = true;
       }
       if (updates.labels !== undefined && Array.isArray(updates.labels)) {
@@ -375,7 +377,7 @@ class JiraTaskStore {
     }
     const limit = filters.limit || 50;
     try {
-      const data = await this._run(['workitem', 'search', '--jql', JSON.stringify(jql), '--limit', String(limit), '--fields', 'key,summary,status,labels,assignee,priority,issuetype']);
+      const data = await this._run(['workitem', 'search', '--jql', String(jql), '--limit', String(limit), '--fields', 'key,summary,status,labels,assignee,priority,issuetype']);
       return this._normalizeWorkItems(Array.isArray(data) ? data : (data.items || []));
     } catch (err) {
       throw new Error(`Failed to list tasks: ${err.message}`);
@@ -389,7 +391,7 @@ class JiraTaskStore {
       return { ok: false, error: 'acli binary not found. Install: brew tap atlassian/homebrew-acli && brew install acli' };
     }
     try {
-      const status = execaCommandSync(`${this.acliPath} jira auth status`, { shell: true }).stdout.trim();
+      const status = execaSync(this.acliPath, ['jira', 'auth', 'status']).stdout.trim();
       return { ok: true, status: status || 'authenticated', acliPath: this.acliPath };
     } catch (err) {
       return {

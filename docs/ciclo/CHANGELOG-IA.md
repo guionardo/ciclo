@@ -2,7 +2,26 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Skills empacotadas no framework (ciclo skills install)
+## 2026-08-29 — Fix: quebras de linha reais na descrição das issues (Jira)
+
+- **Bug**: descrições enviadas ao Jira via `JiraTaskStore` ficavam com `\n`
+  **literal** (backslash+n) em vez de quebra de linha real (observado na FW-27).
+- **Causa**: `_run()` montava `acli jira ... ${args.join(' ')}` com `shell: true`
+  e cada valor de campo era "escapado" com `JSON.stringify()`, que converte
+  newline real em `\n` de 2 caracteres.
+- **Fix**: `_run()` agora executa via `execaSync(acliPath, ['jira', ...args, '--json'])`
+  **sem shell** (args como array — valores chegam verbatim); removidos todos os
+  `JSON.stringify` de `createTask`/`updateTask`/`search` (summary, type,
+  description, status, jql) — agora `String(value)`. Mesmo padrão aplicado a
+  `_isAuthenticated` e `testConnection`.
+- **Dado corrigido**: descrição da FW-27 reescrita com quebras reais;
+  varredura do board não achou outras issues afetadas.
+- **Validado**: create→get→delete round-trip (FW-31 temporária) confirmou que a
+  descrição lida de volta tem newlines reais.
+- Obs.: `GithubVcsAdapter` tem o mesmo padrão shell-join — anotado na skill;
+  fora do escopo v0.1 (PR automático não ativo).
+
+### 2026-08-29 — Skills empacotadas no framework (ciclo skills install)
 
 - **ADR-004 implementado**: as skills do framework são versionadas no repo em
   `skills/<nome>/` (SKILL.md + references/ + templates/ + scripts/), com fonte
