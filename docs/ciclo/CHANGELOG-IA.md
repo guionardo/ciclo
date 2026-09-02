@@ -2,7 +2,21 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Compatibilidade Linux/macOS/Windows + verificação de máquina
+## 2026-09-02 — CI matrix multi-OS validado (Linux/macOS/Windows)
+
+- **`.github/workflows/ci-multi-os.yml` criado e passando** nos 3 SOs
+  (ubuntu/macos/windows × Node 20): lint de todos os .js do CLI,
+  `verify-dev-machine.js --ci`, smoke do fingerprint (dotnet/go/python) e
+  `ciclo skills list + install` em HOME temporário (commit `b7c7eea`).
+- **Pitfall descoberto no Windows**: o Node usa `USERPROFILE` (não `HOME`) para
+  `os.homedir()` — no primeiro run o `skills install` com HOME fake instalou no
+  `C:\Users\<user>\.hermes` real e o teste falhou (o código estava correto).
+  Fix: setar `HOME` e `USERPROFILE` juntos (commit `e5f1a12`); registrado na
+  skill `ciclo-framework-setup`.
+- `verify-dev-machine.js` ganhou o modo `--ci` (sai 0 mesmo com pendências
+  esperadas do runner, validando execução/saída nos 3 SOs).
+
+### 2026-08-29 — Compatibilidade Linux/macOS/Windows + verificação de máquina
 
 - **Refactors para execução sem shell (multi-OS)** — comandos de git/gh/acli
   agora usam `execaSync`/array de args (sem `shell: true`), funcionando igual
