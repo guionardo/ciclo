@@ -72,7 +72,7 @@ O ciclo usa duas CLIs oficiais para as integrações:
 | CLI | Uso no ciclo | Obrigatória? |
 |---|---|---|
 | **acli** (Atlassian CLI) | Jira (buscar/criar/editar tasks) | ✅ Sim (via `ciclo init`) |
-| **gh** (GitHub CLI) | GitHub (branch/push/PR) | ⚠️ Recomendada |
+| **gh** (GitHub CLI) | GitHub (branch/push/PR) | ✅ Sim (via `ciclo init`, exige autenticação) |
 
 > `ciclo init` detecta CLIs ausentes e oferece instalação automática por sistema
 > operacional — ou mostra as instruções manuais abaixo.

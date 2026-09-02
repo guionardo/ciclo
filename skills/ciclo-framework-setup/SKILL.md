@@ -38,8 +38,7 @@ Skill for setting up the ciclo framework CLI (@ciclo/cli) in a new or existing r
    - Jira service configuration is MANDATORY, validated via the **official Atlassian CLI (ACLI)** — NOT REST env vars:
      - Requires `acli` installed AND authenticated (`acli jira auth status` OK). If the binary is missing, offer automatic install per-OS (`src/services/cliInstall.js`: brew/curl on macOS, PowerShell on Windows, curl/apt/rpm on Linux) or print manual instructions; Jira is mandatory so abort if it can't be satisfied.
      - Store `configured:true`, `method:'acli'`, `siteUrl`, optional `projectKey`. No `JIRA_BASE_URL/JIRA_EMAIL/JIRA_API_TOKEN` validation.
-   - GitHub is NOT configured in ciclo (no prompts, no `services.github` in config). Its availability is detected at runtime via `gh auth status` only. On init, a missing `gh` binary triggers the same optional auto-install flow and does NOT block.
-   - Prepare files to be written atomically:
+   - GitHub is REQUIRED since 2026-09: on init, a missing `gh` binary triggers the same auto-install flow as acli and then `gh auth status` MUST succeed (wizard aborts with `✗ GitHub CLI (gh) não autenticada. Rode \`gh auth login\`` otherwise, same as Jira). No `services.github` in config — presence/auth is validated at runtime via `gh auth status` only.\n   - Prepare files to be written atomically:
      - `.ciclo/config.json` (merged with existing if present).
      - `.ciclo/state.json` (lockfile containing version, fingerprint hash, timestamp, wizard answers).
      - `.gitignore` append lines for `.ciclo/logs/`, `.ciclo/events.jsonl`, `worktrees/`.

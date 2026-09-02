@@ -36,8 +36,11 @@ O framework é **multi-OS**: Linux, macOS e Windows.
 | Node.js | 18+ | `node -v` |
 | npm (ou bun/pnpm) | — | `npm -v` |
 | git | — | `git --version` |
-| **acli** (Atlassian CLI) | presente + autenticado | `acli --version` |
-| **gh** (GitHub CLI) | presente + autenticado | `gh --version` |
+| **acli** (Atlassian CLI) | ✅ obrigatória — presente + autenticado | `acli --version` + `acli jira auth status` |
+| **gh** (GitHub CLI) | ✅ obrigatória — presente + autenticado | `gh --version` + `gh auth status` |
+
+> **gh é obrigatória desde o `ciclo init`** (exige instalação + `gh auth login`),
+> da mesma forma que a acli exige o Jira. Sem gh autenticada o wizard aborta.
 
 Se faltar Node/git, instale pelo gerenciador do SO (homebrew/apt/winget).
 

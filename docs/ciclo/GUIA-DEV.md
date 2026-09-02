@@ -17,7 +17,7 @@ implementar → mover para revisão/concluída. Cada passo sincroniza com o Jira
 |---|---|---|
 | Node.js 18+ | ✅ | `node -v` |
 | **acli** (Atlassian CLI) | ✅ Jira | `acli jira auth status` |
-| **gh** (GitHub CLI) | ⚠️ Recomendada | `gh auth status` |
+| **gh** (GitHub CLI) | ✅ Obrigatória | `gh auth status` |
 
 > O `ciclo init` detecta CLIs ausentes e oferece a instalação automática por SO.
 > Autenticação: `acli jira auth login --web` (OAuth no navegador) e `gh auth login`.

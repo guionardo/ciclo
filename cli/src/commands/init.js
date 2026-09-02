@@ -263,25 +263,29 @@ const initCommand = new Command()
           projectKey: (jiraDefaults && jiraDefaults.projectKey) || (jiraProjectKey.length > 0 ? jiraProjectKey.trim() : null),
         },
       };
-    }// 5.5. Skills configuration (optional)
-    // 5.6. GitHub CLI check (optional install)
-    if (!opts.yes) {
+    }
+
+    // 5.6. GitHub CLI check (REQUIRED — push de branches/PRs e ciclo trabalho)
+    // gh is now mandatory like acli: missing binary → install or abort;
+    // not authenticated → tell the dev to run `gh auth login` (no config stored).
+    const validateGitHub = async () => {
       if (!isCommandAvailable('gh')) {
-        console.log('\n🔌 GitHub CLI (gh) — necessário para push de branches e PRs');
-        const installGh = await prompts({
-          type: 'confirm',
-          name: 'installGh',
-          message: 'gh não encontrado. Deseja instalar automaticamente?',
-          initial: true,
-        });
-        if (installGh.installGh) {
-          await installCli('gh');
-        } else {
-          printManualInstall('gh');
-          console.log('   (Você pode continuar; GitHub fica disponível após instalar.)');
+        const ghOk = await ensureCliInstalled('gh', !opts.yes);
+        if (!ghOk) {
+          console.error('\n✗ GitHub CLI (gh) é obrigatória (push de branches, PRs, ciclo trabalho).');
+          console.error('   Instale (brew/apt/winget — veja as instruções acima) e rode `ciclo init` novamente.');
+          process.exit(1);
         }
       }
-    }
+      try {
+        const { execaSync } = require('execa');
+        execaSync('gh', ['auth', 'status'], { stdio: 'ignore' });
+      } catch (_) {
+        console.error('\n✗ GitHub CLI (gh) não autenticada. Rode `gh auth login` e tente novamente.');
+        process.exit(1);
+      }
+    };
+    await validateGitHub();
     if (!opts.yes) {
       console.log('\n🔧 Skill configuration (optional, enables AI-assisted features)');
       const skillCategories = [

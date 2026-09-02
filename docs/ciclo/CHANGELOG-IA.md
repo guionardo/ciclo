@@ -2,7 +2,22 @@
 
 *Changes made by ciclo agents*
 
-## 2026-09-02 — CI matrix multi-OS validado (Linux/macOS/Windows)
+## 2026-09-02 — gh (GitHub CLI) passa a ser obrigatória no `ciclo init`
+
+- **Decisão**: gh deixa de ser opcional/recomendada — agora é **obrigatória** no
+  wizard, no mesmo nível da acli/Jira.
+- **`init.js`**: novo `validateGitHub()` (roda nos modos interativo e `-y`):
+  - gh ausente → `ensureCliInstalled('gh', …)` (auto-instala ou aborta);
+  - `gh auth status` falha → aborta com `✗ GitHub CLI (gh) não autenticada.
+    Rode \`gh auth login\` e tente novamente.`
+- **Docs**: README (tabela de pré-requisitos), GUIA-DEV (gh ✅ Obrigatória),
+  ROTEIRO-REPLICACAO (Etapa 0 marca as duas CLIs como obrigatórias + nota).
+- **Skill** `ciclo-framework-setup` atualizada (GH required; auto-install +
+  auth obrigatória) e sincronizada com o repo.
+- Validado: `init -y` OK com gh autenticado; aborta (exit 1) com
+  `GH_CONFIG_DIR` vazio (simulando gh sem login).
+
+### 2026-09-02 — CI matrix multi-OS validado (Linux/macOS/Windows)
 
 - **`.github/workflows/ci-multi-os.yml` criado e passando** nos 3 SOs
   (ubuntu/macos/windows × Node 20): lint de todos os .js do CLI,
