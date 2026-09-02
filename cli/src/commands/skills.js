@@ -114,7 +114,7 @@ skillsCommand
       console.log('❌ Nenhuma skill empacotada encontrada em skills/ — nada a instalar.');
       return;
     }
-    console.log(`📦 Instalando skills do framework em ${HERMES_SKILLS_DIR} e ${OPENCODE_SKILLS_DIR}...\\n`);
+    console.log(`📦 Instalando skills do framework em ${HERMES_SKILLS_DIR} e ${OPENCODE_SKILLS_DIR}...`);
     let hermesInstalled = 0;
     let hermesSkipped = 0;
     let opencodeInstalled = 0;
@@ -157,7 +157,7 @@ skillsCommand
         opencodeInstalled++;
       }
     }
-    console.log(`\\n✅ Concluído: Hermes: ${hermesInstalled} instalada(s), ${hermesSkipped} pulada(s).`);
+    console.log(`✅ Concluído: Hermes: ${hermesInstalled} instalada(s), ${hermesSkipped} pulada(s).`);
     console.log(`           opencode: ${opencodeInstalled} instalada(s), ${opencodeSkipped} pulada(s).`);
     if (hermesSkipped > 0 || opencodeSkipped > 0) {
       console.log(`   Dica: rode com --force para atualizar as versões existentes.`);
