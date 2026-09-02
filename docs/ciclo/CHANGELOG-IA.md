@@ -2,6 +2,16 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — comando skills agora sincroniza com opencode
+
+- O comando `ciclo skills install` agora copia as skills do framework para
+  ambos os diretórios:
+    - ~/.hermes/skills/ (para o Hermes Agent)
+    - ~/.config/opencode/skills/ (para o opencode)
+- Isso garante que as skills estejam disponíveis em ambos os ambientes de agente.
+- O comando `ciclo skills list` permanece inalterado (lista apenas as skills empacotadas no repo).
+- A opção `--force` funciona para ambos os destinos, permitindo atualização forçada.
+
 ## 2026-09-02 — correção do aviso de atualização (repo hardcoded)
 
 - O aviso de nova versão da CLI agora sempre verifica o repositório correto

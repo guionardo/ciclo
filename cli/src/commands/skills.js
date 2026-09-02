@@ -1,6 +1,6 @@
 // src/commands/skills.js
 // Gerencia as skills empacotadas no framework ciclo.
-//
+//\ 
 // As skills que documentam/instruem o uso do ciclo vivem versionadas no repo
 // do framework em <repo>/skills/<nome>/ (SKILL.md + references/ + templates/ +
 // scripts/). Este comando permite:
@@ -19,6 +19,8 @@ const os = require('node:os');
 const FRAMEWORK_SKILLS_DIR = join(__dirname, '..', '..', '..', 'skills');
 // destino: ~/.hermes/skills/<nome>/
 const HERMES_SKILLS_DIR = join(os.homedir(), '.hermes', 'skills');
+// destino: ~/.config/opencode/skills/<nome>/
+const OPENCODE_SKILLS_DIR = join(os.homedir(), '.config', 'opencode', 'skills');
 
 async function dirExists(p) {
   try {
@@ -52,13 +54,14 @@ async function listBundledSkills() {
 
 /**
  * Copia recursivamente a árvore de uma skill de <repo>/skills/<name> para o
- * diretório de skills do Hermes (~/.hermes/skills/<name>).
+ * diretório de skills destino.
  * @param {string} name
+ * @param {string} destDir
  * @returns {Promise<{files: number, dest: string}>}
  */
-async function installSkill(name) {
+async function installSkill(name, destDir) {
   const src = join(FRAMEWORK_SKILLS_DIR, name);
-  const dest = join(HERMES_SKILLS_DIR, name);
+  const dest = join(destDir, name);
   await mkdir(dest, { recursive: true });
   let files = 0;
   const queue = [{ src, dest }];
@@ -97,13 +100,13 @@ skillsCommand
     for (const n of names) {
       console.log(`   - ${n}`);
     }
-    console.log(`\n📂 Origem: ${FRAMEWORK_SKILLS_DIR}`);
+    console.log(`\\n📂 Origem: ${FRAMEWORK_SKILLS_DIR}`);
     console.log(`💡 Instale no Hermes com: ciclo skills install`);
   });
 
 skillsCommand
   .command('install')
-  .description('Instala (copia) as skills do framework em ~/.hermes/skills/')
+  .description('Instala (copia) as skills do framework em ~/.hermes/skills/ e ~/.config/opencode/skills/')
   .option('-f, --force', 'sobrescreve skills já existentes no destino')
   .action(async (opts) => {
     const names = await listBundledSkills();
@@ -111,26 +114,52 @@ skillsCommand
       console.log('❌ Nenhuma skill empacotada encontrada em skills/ — nada a instalar.');
       return;
     }
-    console.log(`📦 Instalando skills do framework em ${HERMES_SKILLS_DIR}...\n`);
-    let installed = 0;
-    let skipped = 0;
+    console.log(`📦 Instalando skills do framework em ${HERMES_SKILLS_DIR} e ${OPENCODE_SKILLS_DIR}...\\n`);
+    let hermesInstalled = 0;
+    let hermesSkipped = 0;
+    let opencodeInstalled = 0;
+    let opencodeSkipped = 0;
     for (const name of names) {
-      const dest = join(HERMES_SKILLS_DIR, name);
-      const exists = await dirExists(dest);
-      if (exists && !opts.force) {
-        console.log(`   ⏭️  ${name}: já instalada (use --force para sobrescrever)`);
-        skipped++;
-        continue;
+      const hermesDest = join(HERMES_SKILLS_DIR, name);
+      const opencodeDest = join(OPENCODE_SKILLS_DIR, name);
+      let hermesExists = false;
+      let opencodeExists = false;
+      try {
+        await access(hermesDest);
+        hermesExists = true;
+      } catch {}
+      try {
+        await access(opencodeDest);
+        opencodeExists = true;
+      } catch {}
+      
+      if (hermesExists && !opts.force) {
+        console.log(`   ⏭️  ${name}: já instalada no Hermes (use --force para sobrescrever)`);
+        hermesSkipped++;
+      } else {
+        if (hermesExists && opts.force) {
+          await rm(hermesDest, { recursive: true, force: true });
+        }
+        await installSkill(name, HERMES_SKILLS_DIR);
+        console.log(`   ✅ ${name}: copiada para Hermes`);
+        hermesInstalled++;
       }
-      if (exists && opts.force) {
-        await rm(dest, { recursive: true, force: true });
+      
+      if (opencodeExists && !opts.force) {
+        console.log(`   ⏭️  ${name}: já instalada no opencode (use --force para sobrescrever)`);
+        opencodeSkipped++;
+      } else {
+        if (opencodeExists && opts.force) {
+          await rm(opencodeDest, { recursive: true, force: true });
+        }
+        await installSkill(name, OPENCODE_SKILLS_DIR);
+        console.log(`   ✅ ${name}: copiada para opencode`);
+        opencodeInstalled++;
       }
-      const { files, dest: d } = await installSkill(name);
-      console.log(`   ✅ ${name}: ${files} arquivos → ${d}`);
-      installed++;
     }
-    console.log(`\n✅ Concluído: ${installed} instalada(s), ${skipped} pulada(s).`);
-    if (skipped > 0) {
+    console.log(`\\n✅ Concluído: Hermes: ${hermesInstalled} instalada(s), ${hermesSkipped} pulada(s).`);
+    console.log(`           opencode: ${opencodeInstalled} instalada(s), ${opencodeSkipped} pulada(s).`);
+    if (hermesSkipped > 0 || opencodeSkipped > 0) {
       console.log(`   Dica: rode com --force para atualizar as versões existentes.`);
     }
   });
