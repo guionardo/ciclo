@@ -192,7 +192,8 @@ async function fetchChangelogFromMain(repo, maxLines = 40) {
  * }>}
  */
 async function checkForUpdates({ force = false } = {}) {
-  const repo = resolveRepo();
+  // For update checks, we always check the ciclo CLI's own repository
+  const repo = 'guionardo/ciclo';
   const current = getLocalVersion();
 
   // cache (automático)

@@ -74,6 +74,10 @@ Skill for setting up the ciclo framework CLI (@ciclo/cli) in a new or existing r
        - Then the project part: validate existence of `.ciclo/`, readability of `config.json` and `state.json`; print version, dev name, task prefix; Jira config state + `JiraTaskStore.testConnection()`; GitHub auth already validated above; context directories.
        - Outside a ciclo project it reports the toolchain, shows the `.ciclo` missing as a pendência and points to `ciclo init` as first step.
        - All commands should handle missing `.ciclo` gracefully and exit with a clear message.
+       - **After validation, suggests next steps based on project state**:
+           - If not a ciclo project: suggests running `ciclo init`
+           - If a ciclo project but no tasks exist: suggests running `ciclo new`
+           - If tasks exist: suggests running `ciclo list` then `ciclo start <id>`
 
 5. **Link the CLI entrypoint**
    - Create `bin/ciclo.js` with a `#!/usr/bin/env node` shebang.
