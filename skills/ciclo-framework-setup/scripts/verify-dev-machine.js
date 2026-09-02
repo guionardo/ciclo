@@ -104,8 +104,11 @@ record('Skills do ciclo em ~/.hermes/skills/', skillOk,
 
 // 5b. Hermes Agent (runtime do agente que opera o ciclo)
 const hermes = run('hermes', ['--version']);
+const hermesInstall = process.platform === 'win32'
+  ? 'PowerShell: iex (irm https://hermes-agent.nousresearch.com/install.ps1)'
+  : 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash';
 record('Hermes Agent (runtime do agente)', hermes.status === 0,
-  hermes.status === 0 ? (hermes.stdout || '').split('\n')[0].trim() : 'instale com: curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash');
+  hermes.status === 0 ? (hermes.stdout || '').split('\n')[0].trim() : `instale com: ${hermesInstall}`);
 
 // 6. Config global (~/.ciclo/config.json)
 const globalCfg = join(HOME, '.ciclo', 'config.json');

@@ -12,7 +12,8 @@ Multi-OS: **Linux, macOS e Windows**.
 ## 🚀 Início rápido
 
 Pré-requisito: **Node.js 20+**, `git` e o **Hermes Agent** (o agente que opera o
-ciclo no chat — instale com `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`).
+ciclo no chat — instale com `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`
+no Linux/macOS, ou `iex (irm https://hermes-agent.nousresearch.com/install.ps1)` no Windows/PowerShell).
 As CLIs (`acli` p/ Jira e `gh` p/ GitHub) são instaladas/validadas automaticamente pelo wizard.
 
 ```bash
@@ -133,7 +134,9 @@ ciclo instrucoes [--texto] [--check]   # o que é passado ao agente
 
 > `ciclo init` detecta CLIs ausentes e oferece instalação automática por sistema
 > operacional — ou mostra as instruções manuais abaixo. O Hermes instala-se com
-> `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`.
+> `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`
+> (Linux/macOS) ou `iex (irm https://hermes-agent.nousresearch.com/install.ps1)`
+> (Windows/PowerShell).
 
 ### Instalar a `acli` (Atlassian CLI)
 

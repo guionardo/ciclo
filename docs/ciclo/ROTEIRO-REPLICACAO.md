@@ -129,17 +129,28 @@ ciclo --version   # → 0.1.0
 
 O **Hermes Agent** (Nous Research) é o runtime do agente que lê o `AGENTS.md`
 gerado pelo ciclo, roda `ciclo contexto`, propõe refinamento e opera o fluxo
-para o dev. Open-source, multi-OS (Linux/macOS/Windows):
+para o dev. Open-source, multi-OS (Linux/macOS/Windows + WSL).
+
+**Instalação por SO** (instaladores oficiais — configuram uv, Python, venv e o
+launcher `hermes`):
 
 ```bash
-# Instalador oficial (configura uv, Python, venv e o launcher `hermes`)
+# Linux / macOS
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
 
-# Verificar
+```powershell
+# Windows (PowerShell 5.1+ — o install.ps1 é o instalador oficial)
+iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+```
+
+> Em **WSL** (Windows Subsystem for Linux) use o instalador Linux (`install.sh`)
+> — o `install.sh` detecta Windows nativo e aponta para o PowerShell.
+
+```bash
+# Verificar (qualquer SO)
 hermes --version    # ex.: Hermes Agent v0.20.6
-
-# Setup inicial: escolher modelo/provedor e validar ambiente
-hermes setup        # wizard (modelo + provider)
+hermes setup        # 1ª vez: wizard (modelo + provider)
 hermes model        # trocar modelo/provedor
 hermes doctor       # health check
 ```

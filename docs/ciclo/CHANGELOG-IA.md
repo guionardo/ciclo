@@ -2,6 +2,21 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — Instalação do Hermes prevê Windows e macOS
+
+- **Instalação por SO documentada** (instaladores oficiais do Hermes):
+  Linux/macOS → `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`;
+  **Windows → PowerShell `iex (irm https://hermes-agent.nousresearch.com/install.ps1)`**
+  (instalador oficial, verificado no install.sh que aponta para ele); WSL usa o
+  instalador Linux.
+- **Código com detecção por SO**: `doctor.js` (mensagem de Hermes ausente),
+  `welcome.js` (first-run) e `scripts/welcome.js` (postinstall) mostram o
+  comando correto conforme `process.platform === 'win32'`;
+  `verify-dev-machine.js` (check 5b) sugere o instalador do SO.
+- **Docs**: ROTEIRO-REPLICACAO Etapa 3, GUIA-DEV §1.2 e README (Início rápido +
+  tabela de pré-requisitos) com os dois comandos; skill sincronizada (repo +
+  local). Comandos oficiais conferidos na skill `hermes-agent`.
+
 ## 2026-09-02 — ciclo doctor: valida dependências (toolchain) antes do projeto
 
 - **Ordem das checagens invertida**: o doctor validava o `.ciclo` do diretório e

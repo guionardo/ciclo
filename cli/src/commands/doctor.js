@@ -57,12 +57,16 @@ const doctorCommand = new Command()
     }
 
     // Hermes Agent (runtime do agente)
+    // Instalador oficial por SO: install.sh (Linux/macOS) | install.ps1 (Windows PowerShell)
+    const hermesInstall = process.platform === 'win32'
+      ? 'iex (irm https://hermes-agent.nousresearch.com/install.ps1)'
+      : 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash';
     try {
       const hV = execaSync('hermes', ['--version'], { encoding: 'utf8' }).stdout.trim().split('\n')[0];
       console.log(`  ✅ Hermes Agent: ${hV}`);
     } catch {
       toolFailures++;
-      console.log('  ❌ Hermes Agent: not found. Install with `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash` (see ROTEIRO-REPLICACAO Etapa 3).');
+      console.log(`  ❌ Hermes Agent: not found. Install with \`${hermesInstall}\` (see ROTEIRO-REPLICACAO Etapa 3).`);
     }
 
     // ------------------------------------------------------------------

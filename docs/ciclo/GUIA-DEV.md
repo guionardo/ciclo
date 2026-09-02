@@ -28,12 +28,21 @@ implementar → mover para revisão/concluída. Cada passo sincroniza com o Jira
 
 O agente que opera o ciclo no seu dia a dia (lê o `AGENTS.md`, roda
 `ciclo contexto`, propõe refinamento) é o **Hermes Agent** — open-source, roda em
-Linux/macOS/Windows:
+Linux/macOS/Windows + WSL. Instalação oficial **por SO**:
 
 ```bash
-# Instalador oficial (configura uv, Python, venv e o launcher `hermes`)
+# Linux / macOS
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+```
 
+```powershell
+# Windows (PowerShell 5.1+ — o install.ps1 é o instalador oficial)
+iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+```
+
+> Em **WSL** use o instalador Linux (`install.sh`). Depois, em qualquer SO:
+
+```bash
 hermes --version    # valida (ex.: Hermes Agent v0.20.6)
 hermes setup        # 1ª vez: escolher modelo/provedor
 hermes doctor       # health check

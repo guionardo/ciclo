@@ -37,11 +37,15 @@ function showWelcome() {
   const dim = (s) => `\x1b[2m${s}\x1b[0m`;
   const cyan = (s) => `\x1b[36m${s}\x1b[0m`;
 
+  const hermesInstall = process.platform === 'win32'
+    ? 'PowerShell: iex (irm https://hermes-agent.nousresearch.com/install.ps1)'
+    : 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash';
+
   const msg = `
 ${bold('\x1b[32m🎉 Bem-vindo ao ciclo!')} ${dim('(framework de IA para o ciclo de desenvolvimento)')}
 
 ${bold('Comandos essenciais:')}
-  ${cyan('ciclo doctor')}             valida o ambiente (acli + gh + conexões)
+  ${cyan('ciclo doctor')}             valida o ambiente (acli + gh + Hermes)
   ${cyan('ciclo skills install')}     instala as skills do framework no Hermes (1ª vez)
   ${cyan('ciclo init')}               inicializa um projeto de dev (wizard)
   ${cyan('ciclo new "descrição"')}    cria a primeira task (local + issue no Jira)
@@ -53,7 +57,7 @@ ${bold('Próximos passos:' )}
   2. ${cyan('cd /caminho/do/projeto')} → ${cyan('ciclo init')} → inicializa o projeto
   3. ${cyan('ciclo new "Minha primeira feature"')} → primeira task
 
-${dim('Pré-requisitos: Hermes Agent (curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash), acli + gh (instalados pelo ciclo init).')}
+${dim(`Pré-requisitos: Hermes Agent (${hermesInstall}), acli + gh (instalados pelo ciclo init).`)}
 ${dim('Docs: https://github.com/guionardo/ciclo#readme · Roteiro completo: docs/ciclo/ROTEIRO-REPLICACAO.md')}
 `;
   process.stdout.write(msg);
