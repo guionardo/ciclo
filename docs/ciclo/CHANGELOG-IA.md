@@ -2,6 +2,20 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — ciclo doctor: valida dependências (toolchain) antes do projeto
+
+- **Ordem das checagens invertida**: o doctor validava o `.ciclo` do diretório e
+  abortava (`exit(1)`) antes de checar acli/gh/Hermes — inútil na 1ª instalação.
+  Agora a **seção "🔧 Dependencies (toolchain)" roda sempre primeiro** (mesmo
+  fora de projeto ciclo): Node.js, acli + auth Jira, gh + auth GitHub, Hermes
+  Agent — cada ausência/falta de auth vira ❌ com a instrução de instalação
+  específica (brew/README, `gh auth login`, `curl ... install.sh`).
+- **Projeto ciclo validado depois** (`.ciclo/config.json`, services, state) e o
+  doctor aguenta rodar fora de projeto: orienta `ciclo init` como primeiro
+  passo; resumo "❌ N pendência(s)" + exit 1, ou "✅ All checks passed" + exit 0.
+- Testado: fora de projeto (toolchain ✅ / projeto ✗), projeto fake com
+  credenciais reais (exit 0), PATH sem acli/hermes (❌ com instruções, exit 1).
+
 ## 2026-09-02 — Boas-vindas pós-instalação + compatibilidade de instaladores
 
 - **Mensagem de boas-vindas pós-instalação**: `scripts/welcome.js` +
