@@ -19,6 +19,11 @@ const refineCommand = require('../src/commands/refine');
 const skillsCommand = require('../src/commands/skills');
 const updateCommand = require('../src/commands/update');
 
+// Boas-vindas na primeira execução (garante a mensagem mesmo quando o npm ≥11
+// bloqueia o postinstall via allow-scripts). Discreto e one-shot.
+const { showWelcome } = require('../src/services/welcome.js');
+showWelcome();
+
 // Checagem periódica de nova versão (TTL 24h; silenciosa se não há update;
 // desligável com CICLO_SKIP_UPDATE_CHECK=1 ou em CI). Dispara sem bloquear.
 const { scheduleAutomaticCheck } = require('../src/services/updateCheck.js');
