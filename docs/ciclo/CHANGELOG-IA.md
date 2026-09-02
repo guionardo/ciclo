@@ -2,6 +2,15 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — comando next para sugestão de próximo passo sem validações
+
+- Novo comando `ciclo next` exibe apenas a sugestão de próximo passo com base no estado do projeto,
+  sem gastar tempo ou tokens com as validações completas do `doctor`.
+  - Fora de um projeto ciclo: sugere `ciclo init`.
+  - Projeto ciclo sem tarefas: sugere `ciclo new`.
+  - Projeto ciclo com tarefas: sugere `ciclo list` e `ciclo start <id>`.
+- Útil para orientação rápida após operações como `ciclo move` ou `ciclo start`.
+
 ## 2026-09-02 — doctor sugere próximos passos com base no estado do projeto
 
 - O comando `ciclo doctor` agora, além de validar dependências e o projeto, sugere o próximo passo recomendado:
