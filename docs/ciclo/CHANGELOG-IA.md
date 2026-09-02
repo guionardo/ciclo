@@ -2,6 +2,14 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — doctor sugere próximos passos com base no estado do projeto
+
+- O comando `ciclo doctor` agora, além de validar dependências e o projeto, sugere o próximo passo recomendado:
+  - Se o diretório não é um projeto ciclo: sugere executar `ciclo init`.
+  - Se é um projeto ciclo mas não há tarefas: sugere executar `ciclo new`.
+  - Se há tarefas: sugere listar as tarefas com `ciclo list` e iniciar uma com `ciclo start <id>`.
+- Essa sugestão aparece após as dicas existentes, ajudando o desenvolvedor a saber o que fazer em seguida sem precisar consultar a documentação.
+
 ## 2026-09-02 — Instalação do Hermes passa a ser opcional (recomendada)
 
 - **Hermes Agent**: a verificação da máquina do dev (`ciclo doctor` e `verify-dev-machine.js`) agora trata o Hermes como **opcional, mas recomendado para recursos avançados**. A saída mostra `instale com: ... (opcional, mas recomendado para recursos avançados)` quando ausente.
