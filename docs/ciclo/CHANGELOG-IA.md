@@ -2,7 +2,17 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Fix: quebras de linha reais na descrição das issues (Jira)
+## 2026-08-29 — Roteiro de replicação da instalação (máquinas de dev)
+
+- **ROTEIRO-REPLICACAO.md criado** (`docs/ciclo/ROTEIRO-REPLICACAO.md`):
+  checklist operacional de 7 etapas para instalar o ciclo numa máquina nova —
+  pré-requisitos, CLIs oficiais (acli/gh + OAuth), `npm link`, `ciclo skills
+  install`, config global (`~/.ciclo/config.json` com `reposDir`), `ciclo init -y`
+  por projeto, validação ponta-a-ponta (com critérios de aceite e limpeza da
+  task de teste) e troubleshooting.
+- Linkado no README e no GUIA-DEV (seção Referências).
+
+### 2026-08-29 — Fix: quebras de linha reais na descrição das issues (Jira)
 
 - **Bug**: descrições enviadas ao Jira via `JiraTaskStore` ficavam com `\n`
   **literal** (backslash+n) em vez de quebra de linha real (observado na FW-27).

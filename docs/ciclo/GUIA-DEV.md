@@ -252,4 +252,5 @@ saber quais issues pertencem a este repositório (dedupe por `jiraKey` + `repoLa
 - [ADR-002](decisoes/2026-08-29-ADR-002-refinamento-assistido-agente-dev.md) — refinamento assistido agente↔dev
 - [ADR-003](decisoes/2026-08-29-ADR-003-fingerprint-stacks-e-label-linguagem.md) — fingerprint multi-stack + label `lang:<stack>`
 - [ADR-004](decisoes/2026-08-29-ADR-004-skills-empacotadas-no-framework.md) — skills empacotadas no framework (`ciclo skills install`)
+- [ROTEIRO-REPLICACAO.md](ROTEIRO-REPLICACAO.md) — checklist operacional de instalação em máquina nova (do zero até o ponta-a-ponta)
 - [CHANGELOG-IA.md](CHANGELOG-IA.md) — histórico das decisões dos agentes

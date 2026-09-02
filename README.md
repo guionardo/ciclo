@@ -34,6 +34,7 @@ por agentes → revisão de código → deploy → observabilidade da evolução
 - [SPEC.md](SPEC.md) — Arquitetura: componentes, fluxo do ciclo, agentes, integrações (atualizado — ACLI + gh)
 - [ROADMAP.md](ROADMAP.md) — Fases de evolução (Parte I: piloto com CLIs oficiais; Parte II: PR automático/dashboard)
 - [docs/ciclo/GUIA-DEV.md](docs/ciclo/GUIA-DEV.md) — **guia prático do desenvolvedor**: instalação, primeiros comandos, fluxo do dia a dia e uso pelo agente (prompts + exemplos)
+- [docs/ciclo/ROTEIRO-REPLICACAO.md](docs/ciclo/ROTEIRO-REPLICACAO.md) — **roteiro operacional** para instalar o ciclo numa máquina nova de dev (checklist por etapa + validação ponta-a-ponta)
 - [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label; ADR-002: refinamento assistido agente↔dev; ADR-003: fingerprint multi-stack + label lang; ADR-004: skills empacotadas no framework)
 - [docs/ciclo/CHANGELOG-IA.md](docs/ciclo/CHANGELOG-IA.md) — registro das ações dos agentes
 - [skills/](skills/) — skills do framework empacotadas (instaladas com `ciclo skills install`)
