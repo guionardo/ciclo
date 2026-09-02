@@ -16,6 +16,7 @@ Skill for setting up the ciclo framework CLI (@ciclo/cli) in a new or existing r
 - Packaging the framework's Hermes skills into the repo / installing them on a new dev machine (`ciclo skills install`, ADR-004).
 - Documenting framework decisions: new ADR + CHANGELOG-IA top entry + coordinated SPEC/README/ROADMAP/GUIA-DEV updates (see `references/docs-decisions.md` and `references/dev-guide-pattern.md`).
 - Installing the CLI directly from the GitHub repo: the root `package.json` (bin → `cli/bin/ciclo.js`, deps mirrored from `cli/`, `files: [cli/bin, cli/src, skills]`) makes `npm install -g guionardo/ciclo` work like `github:guionardo/ciclo` — quick install path documented in README/GUIA-DEV/ROTEIRO-REPLICACAO; update with `npm install -g guionardo/ciclo@main`.
+- Setting up a new dev machine INCLUDES installing the **Hermes Agent** runtime (the agent that operates ciclo): `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, then `hermes setup` / `hermes doctor`. Documented in ROTEIRO-REPLICACAO Etapa 3 and GUIA-DEV section 1.2; `verify-dev-machine.js` checks it via `hermes --version` (check 5b). The official install commands come from the `hermes-agent` skill — do not invent them.
 
 ## Steps
 1. **Initialize the CLI package**

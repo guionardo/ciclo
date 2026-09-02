@@ -11,8 +11,9 @@ Multi-OS: **Linux, macOS e Windows**.
 
 ## 🚀 Início rápido
 
-Pré-requisito: **Node.js 20+** e `git`. As CLIs (`acli` p/ Jira e `gh` p/ GitHub) são
-instaladas/validadas automaticamente pelo wizard.
+Pré-requisito: **Node.js 20+**, `git` e o **Hermes Agent** (o agente que opera o
+ciclo no chat — instale com `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`).
+As CLIs (`acli` p/ Jira e `gh` p/ GitHub) são instaladas/validadas automaticamente pelo wizard.
 
 ```bash
 # 1. Instalar a CLI direto do repositório GitHub
@@ -126,11 +127,13 @@ ciclo instrucoes [--texto] [--check]   # o que é passado ao agente
 
 | CLI | Uso no ciclo | Obrigatória? |
 |---|---|---|
+| **Hermes Agent** | runtime do agente (lê AGENTS.md, roda `ciclo contexto`, refina no chat) | ✅ Sim |
 | **acli** (Atlassian CLI) | Jira (buscar/criar/editar tasks) | ✅ Sim (via `ciclo init`) |
 | **gh** (GitHub CLI) | GitHub (branch/push/PR) | ✅ Sim (via `ciclo init`, exige autenticação) |
 
 > `ciclo init` detecta CLIs ausentes e oferece instalação automática por sistema
-> operacional — ou mostra as instruções manuais abaixo.
+> operacional — ou mostra as instruções manuais abaixo. O Hermes instala-se com
+> `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`.
 
 ### Instalar a `acli` (Atlassian CLI)
 

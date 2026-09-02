@@ -36,11 +36,13 @@ O framework é **multi-OS**: Linux, macOS e Windows.
 | Node.js | 18+ | `node -v` |
 | npm (ou bun/pnpm) | — | `npm -v` |
 | git | — | `git --version` |
+| **Hermes Agent** | presente (runtime do agente) | `hermes --version` |
 | **acli** (Atlassian CLI) | ✅ obrigatória — presente + autenticado | `acli --version` + `acli jira auth status` |
 | **gh** (GitHub CLI) | ✅ obrigatória — presente + autenticado | `gh --version` + `gh auth status` |
 
 > **gh é obrigatória desde o `ciclo init`** (exige instalação + `gh auth login`),
 > da mesma forma que a acli exige o Jira. Sem gh autenticada o wizard aborta.
+> O **Hermes Agent** é o runtime do agente (instalação na Etapa 3).
 
 Se faltar Node/git, instale pelo gerenciador do SO (homebrew/apt/winget).
 
@@ -116,7 +118,36 @@ ciclo --version   # → 0.1.0
 
 ---
 
-## Etapa 3 — Instalar as skills do framework no Hermes
+## Etapa 3 — Instalar o Hermes Agent (runtime do agente)
+
+O **Hermes Agent** (Nous Research) é o runtime do agente que lê o `AGENTS.md`
+gerado pelo ciclo, roda `ciclo contexto`, propõe refinamento e opera o fluxo
+para o dev. Open-source, multi-OS (Linux/macOS/Windows):
+
+```bash
+# Instalador oficial (configura uv, Python, venv e o launcher `hermes`)
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+
+# Verificar
+hermes --version    # ex.: Hermes Agent v0.20.6
+
+# Setup inicial: escolher modelo/provedor e validar ambiente
+hermes setup        # wizard (modelo + provider)
+hermes model        # trocar modelo/provedor
+hermes doctor       # health check
+```
+
+✅ Verificação: `hermes --version` responde e `hermes doctor` não aponta erros
+críticos.
+
+> 💡 O dev usa o Hermes **no chat** com o ciclo: "me ajuda a refinar a task
+> FW-27" → o agente roda `ciclo contexto`, propõe 🎯🪜📦📝, você aprova, ele
+> aplica `ciclo refine --plan`. Isso NÃO é configurado manualmente — o
+> `AGENTS.md` do projeto já instrui o agente (criado no `ciclo init`).
+
+---
+
+## Etapa 4 — Instalar as skills do framework no Hermes
 
 As skills (ex.: `ciclo-framework-setup`) são **versionadas no repo** — sem isso o
 agente não tem o conhecimento do ciclo numa máquina nova:
@@ -136,7 +167,7 @@ ls ~/.hermes/skills/ciclo-framework-setup/SKILL.md   # deve existir
 
 ---
 
-## Etapa 4 — Configuração global do usuário
+## Etapa 5 — Configuração global do usuário
 
 O ciclo usa **dois níveis** de config; o global guarda o que é da máquina:
 
@@ -164,7 +195,7 @@ EOF
 
 ---
 
-## Etapa 5 — Inicializar os projetos
+## Etapa 6 — Inicializar os projetos
 
 Para cada repositório de projeto do time:
 
@@ -192,7 +223,7 @@ cat .ciclo/config.json | python3 -m json.tool   # conferir stack.language
 
 ---
 
-## Etapa 6 — Validação completa (ponta-a-ponta)
+## Etapa 7 — Validação completa (ponta-a-ponta)
 
 ```bash
 # 1. Verificação automática da máquina (Linux/macOS/Windows — Node, sem deps)
@@ -218,7 +249,7 @@ acli jira workitem delete --key <JIRA_KEY> --yes
 
 ✅ Critérios de aceite (tudo isso deve passar):
 
-- [ ] `node verify-dev-machine.js` → **9/9 checks OK** (ou 8/8 sem repo; nas 3 plataformas)
+- [ ] `node verify-dev-machine.js` → **10/10 checks OK** (ou 9/9 sem repo; nas 3 plataformas)
 - [ ] `ciclo doctor` sem erros (Jira ✅, GitHub ✅)
 - [ ] `ciclo new` criou issue no Jira com label do repo + `lang:<stack>`
 - [ ] `ciclo refine --plan` gravou descrição **com quebras de linha reais** (nada de `\n` literal) e label `refined`
@@ -228,16 +259,17 @@ acli jira workitem delete --key <JIRA_KEY> --yes
 
 ---
 
-## Etapa 7 — Entrega ao dev (checklist final)
+## Etapa 8 — Entrega ao dev (checklist final)
 
 - [ ] Node + git instalados
+- [ ] **Hermes Agent instalado** — `hermes --version` responde e `hermes doctor` OK
 - [ ] `acli` autenticado (OAuth) — `acli jira auth status` OK
 - [ ] `gh` autenticado — `gh auth status` OK
 - [ ] `ciclo --version` responde
 - [ ] `ciclo skills install` feito (skills no `~/.hermes/skills/`)
 - [ ] `~/.ciclo/config.json` com `devName` e `reposDir`
 - [ ] Projetos inicializados (`ciclo init -y`) e `ciclo doctor` OK
-- [ ] Ponta-a-ponta validado (etapa 6) e task de teste removida
+- [ ] Ponta-a-ponta validado (etapa 7) e task de teste removida
 - [ ] Dev recebeu o **GUIA-DEV.md** ([docs/ciclo/GUIA-DEV.md](GUIA-DEV.md))
       — fluxo do dia a dia + exemplos de prompts para o agente
 

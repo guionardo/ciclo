@@ -2,7 +2,25 @@
 
 *Changes made by ciclo agents*
 
-## 2026-09-02 — README como entrada rápida + decisões em doc separado
+## 2026-09-02 — Instruções de instalação do Hermes Agent para o dev
+
+- **A instalação do Hermes Agent agora faz parte do setup do dev** (era o
+  runtime do agente que faltava instruir): ROTEIRO-REPLICACAO ganhou a
+  **Etapa 3 — Instalar o Hermes Agent** (`curl -fsSL
+  https://hermes-agent.nousresearch.com/install.sh | bash` + `hermes setup`/
+  `doctor`) e renumerou as etapas seguintes (skills 4, config 5, init 6,
+  validação 7, entrega 8).
+- **GUIA-DEV**: seção 1.2 "Instalar o Hermes Agent (runtime do agente)"
+  (pré-requisitos, comandos oficiais) — demais seções renumeradas.
+- **README**: Início rápido e tabela de pré-requisitos citam o Hermes com o
+  instalador oficial.
+- **`verify-dev-machine.js`**: novo check 5b "Hermes Agent (runtime do agente)"
+  (`hermes --version`; valida instalação e orienta se ausente) → máquina pronta
+  agora é **10/10 checks**; skill sincronizada.
+- Comandos oficiais usados vieram da skill hermes-agent (install.sh + setup +
+  doctor), não de suposição.
+
+### 2026-09-02 — README como entrada rápida + decisões em doc separado
 
 - **README.md reorganizado**: virou documento de **entrada rápida para o dev** —
   "🚀 Início rápido" com `npm install -g guionardo/ciclo` logo no topo

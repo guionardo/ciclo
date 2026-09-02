@@ -16,13 +16,33 @@ implementar → mover para revisão/concluída. Cada passo sincroniza com o Jira
 | Ferramenta | Necessária? | Como validar |
 |---|---|---|
 | Node.js 18+ | ✅ | `node -v` |
+| **Hermes Agent** | ✅ runtime do agente | `hermes --version` |
 | **acli** (Atlassian CLI) | ✅ Jira | `acli jira auth status` |
 | **gh** (GitHub CLI) | ✅ Obrigatória | `gh auth status` |
 
 > O `ciclo init` detecta CLIs ausentes e oferece a instalação automática por SO.
 > Autenticação: `acli jira auth login --web` (OAuth no navegador) e `gh auth login`.
+> O Hermes Agent é quem roda os comandos do ciclo por você (seção 4).
 
-### 1.2 Instalar a CLI ciclo
+### 1.2 Instalar o Hermes Agent (runtime do agente)
+
+O agente que opera o ciclo no seu dia a dia (lê o `AGENTS.md`, roda
+`ciclo contexto`, propõe refinamento) é o **Hermes Agent** — open-source, roda em
+Linux/macOS/Windows:
+
+```bash
+# Instalador oficial (configura uv, Python, venv e o launcher `hermes`)
+curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+
+hermes --version    # valida (ex.: Hermes Agent v0.20.6)
+hermes setup        # 1ª vez: escolher modelo/provedor
+hermes doctor       # health check
+```
+
+> Já tem o Hermes? Pule para a CLI ciclo. Nas próximas seções, "o agente" é
+> este Hermes conversando com você no chat.
+
+### 1.3 Instalar a CLI ciclo
 
 **Opção rápida — direto do repositório GitHub (recomendado):**
 
@@ -46,7 +66,7 @@ npm link             # expõe o comando `ciclo` globalmente (ou bun link / pnpm 
 ciclo --version      # valida a instalação
 ```
 
-### 1.3 Instalar as skills do framework (ambiente novo)
+### 1.4 Instalar as skills do framework (ambiente novo)
 
 As skills que instruem o agente sobre o ciclo são **versionadas no repo** (em
 `skills/`) — em uma máquina nova, instale-as no Hermes:
@@ -60,7 +80,7 @@ ciclo skills list         # vê o que foi empacotado no framework
 > Sem isso, o Hermes não encontra as skills locais do ciclo (ex.:
 > `ciclo-framework-setup`) num ambiente novo.
 
-### 1.4 Inicializar um projeto
+### 1.5 Inicializar um projeto
 
 Entre na pasta do repositório onde você vai trabalhar e rode:
 
