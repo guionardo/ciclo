@@ -2,7 +2,25 @@
 
 *Changes made by ciclo agents*
 
-## 2026-09-02 — Instalação rápida via `npm install guionardo/ciclo`
+## 2026-09-02 — Checagem periódica de versão + `ciclo update-check`
+
+- **`src/services/updateCheck.js`**: versão local vs GitHub (releases → senão
+  package.json da main); `gh api` preferido (funciona com repo **privado**),
+  fallback HTTP com `GITHUB_TOKEN`; cache em `~/.ciclo/update-check.json` (TTL
+  24h; cache com `latest:null` sem changelog é tratado como falho e re-consultado).
+- **`ciclo update-check`** (+ alias `update`, flags `--json`/`--forcar`):
+  mostra versão atual, disponível, fonte (release/main), comando de update e
+  **changelog** (body da última GitHub Release; sem releases, entradas do
+  `CHANGELOG-IA.md` da main).
+- **Checagem automática discreta** no arranque da CLI (1×/dia, aviso só quando
+  há versão nova; `CICLO_SKIP_UPDATE_CHECK=1` ou CI desliga).
+- Validado: comparação semver (unit), `guionardo/ciclo` (repo privado, sem
+  releases → main + CHANGELOG), `cli/cli` (repo público com releases → detectou
+  v2.99.0 + changelog + aviso automático).
+- Docs: README (workflow + seção checagem), GUIA-DEV (comando na tabela);
+  CHANGELOG-IA registrado.
+
+### 2026-09-02 — Instalação rápida via `npm install guionardo/ciclo`
 
 - **`package.json` na raiz do repo** habilitando o npm install direto do
   GitHub: bin `ciclo` → `cli/bin/ciclo.js`, deps replicadas do `cli/`,

@@ -104,6 +104,7 @@ ciclo doctor
 | `ciclo sync` | puxa do Jira as issues com o label **deste repositório** |
 | `ciclo report` / `ciclo report --jira` | observabilidade (estados, idade, activity) / mesclada com Jira |
 | `ciclo doctor` | valida ACLI + gh + conexões |
+| `ciclo update-check` | verifica nova versão da CLI + mostra changelog (alerta automático 1×/dia) |
 
 **Exemplo — criar e acompanhar uma task:**
 

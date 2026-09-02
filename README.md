@@ -191,7 +191,8 @@ ciclo --version                   # valida (→ 0.1.0)
 > ciclo skills install        # copia skills/ → ~/.hermes/skills/ (1ª vez)
 > ciclo init -y               # inicializa o projeto
 > ```
-> Para atualizar depois: `npm install -g guionardo/ciclo@main`.
+> **Atualizar depois:** `npm install -g guionardo/ciclo@main` — ou rode
+> `ciclo update-check` para ver se há versão nova + changelog.
 
 **Opção local (para contribuir/desenvolver):**
 
@@ -274,10 +275,32 @@ ciclo report                 # observabilidade local (estados, idade, branches, 
 ciclo report --jira          # + mescla dados do Jira (assignee, prioridade, status, labels)
 ciclo list                   # tasks locais (inclui as importadas do Jira)
 ciclo doctor                 # valida ACLI + gh + conexões
+ciclo update-check           # verifica nova versão da CLI + mostra changelog
+ciclo update-check --json    # saída estruturada (jq)
+ciclo update-check --forcar  # ignora o cache e consulta o GitHub agora
 ciclo instrucoes             # exibe AGENTS.md (projeto+global) e o resumo das skills habilitadas
 ciclo instrucoes --texto     # inclui o conteúdo integral de cada SKILL.md
 ciclo instrucoes --check     # só lista quais arquivos/skills existem
 ```
+
+### Checagem periódica de versão
+
+A CLI verifica **automaticamente** (1×/dia, silenciosa) se há versão nova no
+repositório GitHub — quando existe, mostra um aviso discreto:
+
+```
+⚡ Nova versão da CLI ciclo disponível: 0.1.0 → 0.2.0
+   Rode `ciclo update-check` para ver o changelog, ou atualize com:
+   npm install -g guionardo/ciclo@0.2.0
+```
+
+- Desligue com `CICLO_SKIP_UPDATE_CHECK=1` (ou em CI é ignorada).
+- `ciclo update-check` mostra o changelog: body da última **GitHub Release**
+  quando existir; sem releases, as entradas recentes do `CHANGELOG-IA.md` da
+  main.
+- Dica: crie uma **GitHub Release** por versão (`gh release create v0.2.0`)
+  — o changelog da release passa a ser exibido e o update usa `@v0.2.0`.
+- Atualização: `npm install -g guionardo/ciclo@main` (ou `@<nova-versão>`).
 
 ### Refinamento assistido (agente ↔ dev)
 

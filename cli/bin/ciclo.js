@@ -17,6 +17,12 @@ const contextCommand = require('../src/commands/context');
 const instructionsCommand = require('../src/commands/instructions');
 const refineCommand = require('../src/commands/refine');
 const skillsCommand = require('../src/commands/skills');
+const updateCommand = require('../src/commands/update');
+
+// Checagem periódica de nova versão (TTL 24h; silenciosa se não há update;
+// desligável com CICLO_SKIP_UPDATE_CHECK=1 ou em CI). Dispara sem bloquear.
+const { scheduleAutomaticCheck } = require('../src/services/updateCheck.js');
+scheduleAutomaticCheck();
 
 program
  .name('ciclo')
@@ -37,5 +43,6 @@ program.addCommand(contextCommand);
 program.addCommand(instructionsCommand);
 program.addCommand(refineCommand);
 program.addCommand(skillsCommand);
+program.addCommand(updateCommand);
 
 program.parse();
