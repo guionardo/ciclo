@@ -1,5 +1,7 @@
 # ciclo — Framework de IA para times de desenvolvimento
 
+[![CI multi-OS](https://github.com/guionardo/ciclo/actions/workflows/ci-multi-os.yml/badge.svg)](https://github.com/guionardo/ciclo/actions/workflows/ci-multi-os.yml)
+
 Framework que conecta **JIRA + GitHub + agentes de IA** para operar o ciclo completo
 de desenvolvimento: criação, detalhamento e refinamento de tasks → leitura/execução
 por agentes → revisão de código → deploy → observabilidade da evolução de tasks e roadmap.
