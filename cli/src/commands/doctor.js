@@ -207,6 +207,25 @@ const doctorCommand = new Command()
     console.log('  - Set environment variables for Jira to enable real access.');
     console.log('  - GitHub is detected via `gh auth status` (no configuration needed).');
     console.log('  - Use `ciclo init -y` to accept defaults and skip service configuration.');
-  });
+
+    // Sugestões de próximos passos com base no estado do projeto
+    if (!isProject) {
+      console.log('\n🚀 Próximo passo sugerido: Execute `ciclo init` para iniciar um novo projeto ciclo.');
+    } else {
+      // Verificar se há tarefas
+      const tasksDir = require('node:path').join(process.cwd(), '.ciclo', 'tasks');
+      let taskCount = 0;
+      try {
+        const files = fs.readdirSync(tasksDir);
+        taskCount = files.filter(f => f.endsWith('.json')).length;
+      } catch (e) {
+        // Se o diretório de tarefas não existir, considere 0 tarefas
+      }
+      if (taskCount === 0) {
+        console.log('\n🚀 Próximo passo sugerido: Nenhuma tarefa encontrada. Execute `ciclo new` para criar uma nova tarefa.');
+      } else {
+        console.log('\n🚀 Próximo passo sugerido: Execute `ciclo list` para ver as tarefas e `ciclo start <id>` para iniciar uma tarefa.');
+      }
+    }  });
 
 module.exports = doctorCommand;
