@@ -18,7 +18,7 @@ As CLIs (`acli` p/ Jira e `gh` p/ GitHub) são instaladas/validadas automaticame
 
 ```bash
 # 1. Instalar a CLI direto do repositório GitHub
-npm install -g guionardo/ciclo
+npm install -g --allow-git=all guionardo/ciclo
 ciclo --version                    # → 0.1.0
 
 # 2. Instalar as skills do framework no Hermes (1ª vez)
@@ -32,8 +32,13 @@ ciclo init -y                      # wizard interativo: ciclo init
 ciclo new "Minha primeira feature"
 ```
 
-Para atualizar depois: `npm install -g guionardo/ciclo@main` — a CLI avisa
-sozinha quando há versão nova (1×/dia) e `ciclo update-check` mostra o changelog.
+Para atualizar depois: `npm install -g --allow-git=all guionardo/ciclo@main` — a CLI
+avisa sozinha quando há versão nova (1×/dia) e `ciclo update-check` mostra o changelog.
+
+> ℹ️ **npm ≥ 12 bloqueia dependências git por padrão** (config `allow-git=none` → erro
+> `EALLOWGIT: refusing to fetch github:guionardo/ciclo`). O `--allow-git=all` no
+> comando reabilita; é aceito também no npm 9–11 (sem efeito). Para liberar de vez:
+> `npm config set allow-git all`.
 
 > 📖 Quer o passo a passo completo numa máquina nova? Veja o
 > [ROTEIRO-REPLICACAO.md](docs/ciclo/ROTEIRO-REPLICACAO.md).
@@ -242,7 +247,7 @@ gh auth status
 **Opção rápida — direto do repositório GitHub (recomendado):**
 
 ```bash
-npm install -g guionardo/ciclo    # instala a CLI globalmente (bin `ciclo`)
+npm install -g --allow-git=all guionardo/ciclo    # instala a CLI globalmente (bin `ciclo`)
 ciclo --version                   # valida (→ 0.1.0)
 ```
 
@@ -252,8 +257,13 @@ ciclo --version                   # valida (→ 0.1.0)
 > ciclo skills install        # copia skills/ → ~/.hermes/skills/ (1ª vez)
 > ciclo init -y               # inicializa o projeto
 > ```
-> **Atualizar depois:** `npm install -g guionardo/ciclo@main` — ou rode
-> `ciclo update-check` para ver se há versão nova + changelog.
+> **Atualizar depois:** `npm install -g --allow-git=all guionardo/ciclo@main` — ou
+> rode `ciclo update-check` para ver se há versão nova + changelog.
+>
+> ⚠️ **npm ≥ 12** bloqueia dependências git por padrão (`allow-git=none` →
+> `EALLOWGIT refusing to fetch github:guionardo/ciclo`); o `--allow-git=all`
+> reabilita (aceito sem efeito no npm 9–11). Alternativa permanente:
+> `npm config set allow-git all`.
 
 **Opção local (para contribuir/desenvolver):**
 
@@ -278,7 +288,7 @@ repositório GitHub — quando existe, mostra um aviso discreto:
 ```
 ⚡ Nova versão da CLI ciclo disponível: 0.1.0 → 0.2.0
    Rode `ciclo update-check` para ver o changelog, ou atualize com:
-   npm install -g guionardo/ciclo@0.2.0
+   npm install -g --allow-git=all guionardo/ciclo@0.2.0
 ```
 
 - Desligue com `CICLO_SKIP_UPDATE_CHECK=1` (ou em CI é ignorada).

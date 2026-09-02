@@ -92,12 +92,17 @@ gh auth login
 **Opção rápida — direto do repositório GitHub (recomendado):**
 
 ```bash
-npm install -g guionardo/ciclo    # instala o pacote @ciclo/cli do repo GitHub
+npm install -g --allow-git=all guionardo/ciclo    # instala o pacote @ciclo/cli do repo GitHub
 ciclo --version                   # → 0.1.0
 ```
 
 > Equivale a `npm install -g github:guionardo/ciclo`. Para atualizar depois:
-> `npm install -g guionardo/ciclo@main`.
+> `npm install -g --allow-git=all guionardo/ciclo@main`.
+>
+> ⚠️ **npm ≥ 12** bloqueia dependências git por padrão (`allow-git=none` →
+> `EALLOWGIT refusing to fetch github:guionardo/ciclo`). O `--allow-git=all`
+> reabilita a instalação (no npm 9–11 a flag é aceita sem efeito). Alternativa
+> permanente: `npm config set allow-git all`.
 
 **Opção local (contribuir/desenvolver):**
 

@@ -229,7 +229,7 @@ async function checkForUpdates({ force = false } = {}) {
     updateAvailable,
     changelog,
     releaseUrl,
-    installCommand: `npm install -g ${repo}${source === 'release' ? `@${latest}` : '@main'}`,
+    installCommand: `npm install -g --allow-git=all ${repo}${source === 'release' ? `@${latest}` : '@main'}`,
   };
   writeCache(result);
   return result;

@@ -2,6 +2,23 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — Instalação compatível com npm 12 (allow-git)
+
+- **Problema**: em máquina limpa com npm ≥ 12, `npm install -g guionardo/ciclo`
+  falha com `EALLOWGIT: refusing to fetch "github:guionardo/ciclo"` — o npm 12
+  **desabilitou dependências git por padrão** (nova config `allow-git`, default
+  `none`; valores `all`/`none`/`root`, confirmado no fonte do npm 12.0.2).
+- **Solução**: instalação documentada com `npm install -g --allow-git=all
+  guionardo/ciclo` (reproduzida e validada com npm 12 real: install + bin +
+  first-run OK; a flag é aceita sem efeito no npm 9–11). Alternativa
+  permanente: `npm config set allow-git all`.
+- **`updateCheck.js`**: o comando sugerido no aviso de versão nova agora inclui
+  `--allow-git=all`.
+- **Docs**: README (Início rápido + seção de instalação + checagem de versão),
+  GUIA-DEV §1.3 (opção rápida + tabela de instaladores), ROTEIRO-REPLICACAO
+  Etapa 2 e skill (SKILL.md + references update-check/docs-decisions, repo e
+  local sincronizadas).
+
 ## 2026-09-02 — Instalação do Hermes prevê Windows e macOS
 
 - **Instalação por SO documentada** (instaladores oficiais do Hermes):

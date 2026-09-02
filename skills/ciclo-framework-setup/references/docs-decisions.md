@@ -49,7 +49,7 @@ Regras:
   - Fluxo de trabalho (seção 2) — adicionar os novos passos com comentário inline.
 - **README.md** (desde 2026-09-02 é documento de **entrada rápida**, não a casa
   das decisões):
-  - "🚀 Início rápido" no topo: `npm install -g guionardo/ciclo` → skills →
+  - "🚀 Início rápido" no topo: `npm install -g --allow-git=all guionardo/ciclo` → skills →
     `ciclo init -y` → `ciclo new`; depois fluxo do dia a dia, tabela de
     comandos e tabela de Documentos.
   - Workflow de tasks (bloco de comandos) + seção curta por feature nova.

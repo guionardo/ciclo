@@ -16,11 +16,13 @@ ciclo update                  # alias
 
 - `bin/ciclo.js` chama `scheduleAutomaticCheck()` no arranque de QUALQUER
   comando — dispara sem bloquear; aviso discreto só quando há versão nova:
-  ```
+  ```bash
   ⚡ Nova versão da CLI ciclo disponível: 0.1.0 → 0.2.0
      Rode `ciclo update-check` para ver o changelog, ou atualize com:
-     npm install -g guionardo/ciclo@0.2.0
+     npm install -g --allow-git=all guionardo/ciclo@0.2.0
   ```
+  (npm ≥ 12 bloqueia git deps por padrão → use `--allow-git=all`, ou
+  `npm config set allow-git all`.)
 - Cache: `~/.ciclo/update-check.json` (TTL 24h). Um cache com `latest: null` e
   sem changelog indica fetch falho (ex.: repo privado sem token) → é tratado
   como expirado e re-consultado no próximo comando.
@@ -31,8 +33,8 @@ ciclo update                  # alias
 1. **GitHub Releases**: `gh api repos/<repo>/releases/latest` → tag semântica +
    body (changelog da release). Update usa `@<tag>`.
 2. **Sem releases**: `gh api .../contents/package.json?ref=main` → version da
-   branch main (a instalação `npm install -g guionardo/ciclo` baixa o HEAD da
-   main). Update usa `@main`. Changelog = entradas recentes de
+   branch main (a instalação `npm install -g --allow-git=all guionardo/ciclo` baixa o
+   HEAD da main). Update usa `@main`. Changelog = entradas recentes de
    `docs/ciclo/CHANGELOG-IA.md` da main.
 
 Repo: env `CICLO_GITHUB_REPO` → remote `origin` do repo (dev) → `guionardo/ciclo`.

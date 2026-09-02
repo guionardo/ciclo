@@ -56,13 +56,18 @@ hermes doctor       # health check
 **Opção rápida — direto do repositório GitHub (recomendado):**
 
 ```bash
-npm install -g guionardo/ciclo    # instala a CLI globalmente (bin `ciclo`)
+npm install -g --allow-git=all guionardo/ciclo    # instala a CLI globalmente (bin `ciclo`)
 ciclo --version                   # valida a instalação (→ 0.1.0)
 ```
 
 > Instala o pacote `@ciclo/cli` direto do repo (equivale a
 > `npm install -g github:guionardo/ciclo`). Para atualizar depois:
-> `npm install -g guionardo/ciclo@main`.
+> `npm install -g --allow-git=all guionardo/ciclo@main`.
+>
+> ⚠️ **npm ≥ 12** bloqueia dependências git por padrão (`allow-git=none` →
+> `EALLOWGIT refusing to fetch github:guionardo/ciclo`). O `--allow-git=all`
+> reabilita a instalação (no npm 9–11 a flag é aceita sem efeito). Alternativa
+> permanente: `npm config set allow-git all`.
 
 **Opção local (para contribuir/desenvolver):**
 
@@ -79,7 +84,7 @@ ciclo --version      # valida a instalação
 
 | Instalador | Instala a CLI? | Mensagem de boas-vindas | Observações |
 |---|---|---|---|
-| **npm** (oficial, 9+) | ✅ `npm install -g guionardo/ciclo` | postinstall + first-run | Recomendado |
+| **npm** (oficial, 9+) | ✅ `npm install -g --allow-git=all guionardo/ciclo` | postinstall + first-run | Recomendado (npm ≥ 12 exige `--allow-git=all`) |
 | **pnpm 10/11+** | ✅ `pnpm add -g github:guionardo/ciclo` | só first-run | 🔒 pnpm bloqueia scripts de build por padrão (politica `onlyBuiltDependencies`) |
 | **bun** | ✅ `bun add -g github:guionardo/ciclo` | só first-run | 🔒 bun bloqueia postinstall por padrão ("Blocked 1 postinstall"; libere com `bun pm -g untrusted`) |
 | **deno** | ❌ não suportado | — | `deno install` baixa o CLI como script ESM; o ciclo usa CommonJS (`require`) → `ReferenceError: require is not defined` |
