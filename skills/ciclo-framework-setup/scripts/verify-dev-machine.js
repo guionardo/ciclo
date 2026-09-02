@@ -102,13 +102,13 @@ const skillOk = existsSync(join(skillDir, 'SKILL.md'));
 record('Skills do ciclo em ~/.hermes/skills/', skillOk,
   skillOk ? 'ciclo-framework-setup presente' : 'rode `ciclo skills install`');
 
-// 5b. Hermes Agent (runtime do agente que opera o ciclo)
+// 5b. Hermes Agent (runtime do agente) [OPCIONAL]
 const hermes = run('hermes', ['--version']);
 const hermesInstall = process.platform === 'win32'
   ? 'PowerShell: iex (irm https://hermes-agent.nousresearch.com/install.ps1)'
   : 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash';
-record('Hermes Agent (runtime do agente)', hermes.status === 0,
-  hermes.status === 0 ? (hermes.stdout || '').split('\n')[0].trim() : `instale com: ${hermesInstall}`);
+record('Hermes Agent (runtime do agente) [OPCIONAL]', hermes.status === 0,
+  hermes.status === 0 ? (hermes.stdout || '').split('\n')[0].trim() : `instale com: ${hermesInstall} (opcional, mas recomendado para recursos avançados)`);
 
 // 6. Config global (~/.ciclo/config.json)
 const globalCfg = join(HOME, '.ciclo', 'config.json');

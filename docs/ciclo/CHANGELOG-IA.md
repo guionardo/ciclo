@@ -2,6 +2,13 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — Instalação do Hermes passa a ser opcional (recomendada)
+
+- **Hermes Agent**: a verificação da máquina do dev (`ciclo doctor` e `verify-dev-machine.js`) agora trata o Hermes como **opcional, mas recomendado para recursos avançados**. A saída mostra `instale com: ... (opcional, mas recomendado para recursos avançados)` quando ausente.
+- As skills do ciclo continuam sendo instaladas por padrão via `ciclo skills install` (necessárias para o funcionamento do framework).
+- Documentação atualizada: skill `ciclo-framework-setup` (seção de setup da máquina) e `verify-dev-machine.js` refletem a mudança.
+- O wizard `ciclo init` não exige Hermes; ele apenas sugere a instalação como parte da preparação da máquina.
+
 ## 2026-09-02 — doctor oferece comando de instalação por SO
 
 - **`ciclo doctor`** agora imprime, para cada CLI ausente (acli/gh), o **comando
