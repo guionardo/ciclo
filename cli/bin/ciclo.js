@@ -18,6 +18,7 @@ const instructionsCommand = require('../src/commands/instructions');
 const refineCommand = require('../src/commands/refine');
 const skillsCommand = require('../src/commands/skills');
 const updateCommand = require('../src/commands/update');
+const nextCommand = require('../src/commands/next');
 
 // Boas-vindas na primeira execução (garante a mensagem mesmo quando o npm ≥11
 // bloqueia o postinstall via allow-scripts). Discreto e one-shot.
@@ -49,5 +50,6 @@ program.addCommand(instructionsCommand);
 program.addCommand(refineCommand);
 program.addCommand(skillsCommand);
 program.addCommand(updateCommand);
+program.addCommand(nextCommand);
 
 program.parse();
