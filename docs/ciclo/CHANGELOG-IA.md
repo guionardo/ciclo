@@ -2,6 +2,19 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — correção do aviso de atualização (repo hardcoded)
+
+- O aviso de nova versão da CLI agora sempre verifica o repositório correto
+  (guionardo/ciclo) em vez de usar o repositório do diretório atual via
+  `resolveRepo()`. Isso corrige o problema onde o avio mostrava um comando
+  de atualização incorreto (ex.: `guionardo/wa-backup`) quando o CLI era
+  executado dentro de outros repositórios.
+- O comando `ciclo update-check` continua funcionando normalmente, mostrando
+  o comando de atualização correto: `npm install -g --allow-git=all
+  guionardo/ciclo@main` (ou `@<versão>` para releases).
+- O aviso automático (no arranque da CLI) só aparece quando há uma versão
+  realmente disponível, respeitando o cache de 24h.
+
 ## 2026-09-02 — comando next para sugestão de próximo passo sem validações
 
 - Novo comando `ciclo next` exibe apenas a sugestão de próximo passo com base no estado do projeto,
