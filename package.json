@@ -1,0 +1,35 @@
+{
+  "name": "@ciclo/cli",
+  "version": "0.1.0",
+  "description": "ciclo — framework de IA para o ciclo de desenvolvimento (tasks → spec → código → review → deploy)",
+  "main": "cli/src/index.js",
+  "bin": {
+    "ciclo": "cli/bin/ciclo.js"
+  },
+  "files": [
+    "cli/bin",
+    "cli/src",
+    "skills"
+  ],
+  "scripts": {
+    "start": "node cli/bin/ciclo.js",
+    "test": "node --check cli/bin/ciclo.js && node --check cli/src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "workflow",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "dotenv": "^17.4.2",
+    "execa": "^9.6.1",
+    "prompts": "^2.4.2",
+    "uuid": "^14.0.2"
+  }
+}

@@ -178,6 +178,23 @@ gh auth status
 
 ### 5. Instalar a CLI ciclo
 
+**Opção rápida — direto do repositório GitHub (recomendado):**
+
+```bash
+npm install -g guionardo/ciclo    # instala a CLI globalmente (bin `ciclo`)
+ciclo --version                   # valida (→ 0.1.0)
+```
+
+> O npm instala o pacote `@ciclo/cli` direto do repo (mesma coisa que
+> `npm install -g github:guionardo/ciclo`). Depois:
+> ```bash
+> ciclo skills install        # copia skills/ → ~/.hermes/skills/ (1ª vez)
+> ciclo init -y               # inicializa o projeto
+> ```
+> Para atualizar depois: `npm install -g guionardo/ciclo@main`.
+
+**Opção local (para contribuir/desenvolver):**
+
 1. Clone o repositório do framework:
     ```bash
     git clone <URL_DO_REPOSITORIO_CICLO>

@@ -24,6 +24,19 @@ implementar → mover para revisão/concluída. Cada passo sincroniza com o Jira
 
 ### 1.2 Instalar a CLI ciclo
 
+**Opção rápida — direto do repositório GitHub (recomendado):**
+
+```bash
+npm install -g guionardo/ciclo    # instala a CLI globalmente (bin `ciclo`)
+ciclo --version                   # valida a instalação (→ 0.1.0)
+```
+
+> Instala o pacote `@ciclo/cli` direto do repo (equivale a
+> `npm install -g github:guionardo/ciclo`). Para atualizar depois:
+> `npm install -g guionardo/ciclo@main`.
+
+**Opção local (para contribuir/desenvolver):**
+
 ```bash
 # a partir do repositório do framework
 cd ciclo/cli

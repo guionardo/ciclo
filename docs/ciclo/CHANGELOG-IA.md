@@ -2,7 +2,20 @@
 
 *Changes made by ciclo agents*
 
-## 2026-09-02 — gh (GitHub CLI) passa a ser obrigatória no `ciclo init`
+## 2026-09-02 — Instalação rápida via `npm install guionardo/ciclo`
+
+- **`package.json` na raiz do repo** habilitando o npm install direto do
+  GitHub: bin `ciclo` → `cli/bin/ciclo.js`, deps replicadas do `cli/`,
+  `files: [cli/bin, cli/src, skills]`.
+- **Instalação rápida documentada** (README, GUIA-DEV, ROTEIRO-REPLICACAO):
+  `npm install -g guionardo/ciclo` (equivale a `github:guionardo/ciclo`);
+  atualização com `npm install -g guionardo/ciclo@main`. Opção local (clone +
+  `npm link`) fica para quem quer contribuir.
+- **Validado**: `npm pack` + `npm install` do tarball em projeto limpo →
+  `ciclo --version` (0.1.0), `ciclo skills list` (resolve `skills/` do pacote
+  instalado) e `ciclo skills install` (HOME fake) funcionaram.
+
+### 2026-09-02 — gh (GitHub CLI) passa a ser obrigatória no `ciclo init`
 
 - **Decisão**: gh deixa de ser opcional/recomendada — agora é **obrigatória** no
   wizard, no mesmo nível da acli/Jira.
