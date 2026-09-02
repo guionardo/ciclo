@@ -103,8 +103,10 @@ jobs:
         shell: bash
         run: |
           FAKE_HOME="$(mktemp -d)"
-          HOME="$FAKE_HOME" ciclo skills list
-          HOME="$FAKE_HOME" ciclo skills install
+          # Node usa USERPROFILE (não HOME) para os.homedir() no Windows —
+          # setar ambos para isolar a instalação num diretório temporário.
+          HOME="$FAKE_HOME" USERPROFILE="$FAKE_HOME" ciclo skills list
+          HOME="$FAKE_HOME" USERPROFILE="$FAKE_HOME" ciclo skills install
           test -f "$FAKE_HOME/.hermes/skills/ciclo-framework-setup/SKILL.md" \
             && echo "SKILL_INSTALLED_OK" \
             || { echo "SKILL_INSTALL_FAILED"; exit 1; }
