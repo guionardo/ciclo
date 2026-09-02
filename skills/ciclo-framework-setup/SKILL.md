@@ -68,13 +68,12 @@ Skill for setting up the ciclo framework CLI (@ciclo/cli) in a new or existing r
      - Create and checkout the branch via `execa('git', ['checkout', '-b', branchName])` (fallback to checkout if branch exists).
      - Update task status to `em_execução`, store branch name in task JSON.
      - GitHub push is opportunistic: check `gh auth status`; if authenticated and the `origin` remote URL parses to a GitHub `owner/repo`, verify repo access via `gh api /repos/{owner}/{repo}` then `git push -u origin <branch>`. No config, no token env vars. Branch stays local-only otherwise.
-   - `doctor`: 
-     - Validate existence of `.ciclo/`, readability of `config.json` and `state.json`.
-     - Print version, dev name, task prefix.
-     - Jira: report config state and validate connection via `JiraTaskStore.testConnection()` (runs `acli jira auth status`), report OK/FAIL. Also report `gh auth status`-style checks for GitHub via the `gh` CLI (`/Logged in to (\S+) account (\S+)/` → account=match[2], host=match[1]).
-     - GitHub: do NOT read config — just run `gh auth status` and report installed + authenticated (account/host), or instruct `gh auth login`.
-     - Verify presence of context directories and documentation files.
-   - All commands should handle missing `.ciclo` gracefully and exit with a clear message.
+   - `doctor`:
+       - **Toolchain first** (always runs, even outside a ciclo project): Node.js version; acli `--version` + `acli jira auth status`; gh `--version` + `gh auth status` (account/host via `/Logged in to (\S+) account (\S+)/`); Hermes Agent `hermes --version`.
+       - Missing CLI / not authenticated → ❌ with the **OS-specific install command** via `cliInstall.js` `getInstallSpec()` (`brew` on macOS, `winget`/PowerShell on Windows, curl/apt on Linux; Hermes: install.sh on macOS/Linux, install.ps1 on Windows) + hint to `ciclo init` (auto-installs). Each failure counts into "❌ N pendência(s)" (exit 1).
+       - Then the project part: validate existence of `.ciclo/`, readability of `config.json` and `state.json`; print version, dev name, task prefix; Jira config state + `JiraTaskStore.testConnection()`; GitHub auth already validated above; context directories.
+       - Outside a ciclo project it reports the toolchain, shows the `.ciclo` missing as a pendência and points to `ciclo init` as first step.
+       - All commands should handle missing `.ciclo` gracefully and exit with a clear message.
 
 5. **Link the CLI entrypoint**
    - Create `bin/ciclo.js` with a `#!/usr/bin/env node` shebang.

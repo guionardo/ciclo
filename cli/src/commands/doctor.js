@@ -23,6 +23,21 @@ const doctorCommand = new Command()
     // Node.js
     console.log(`  ✅ Node.js: ${process.version}`);
 
+    // Helper: prints "install with <OS-specific command>" for a missing CLI
+    const { detectPlatform, getInstallSpec } = require('../services/cliInstall.js');
+    const platform = detectPlatform();
+    function osInstallHint(cli) {
+      const spec = getInstallSpec(cli);
+      const steps = spec && spec.manual && spec.manual.length ? spec.manual : [];
+      console.log(`     📥 Instalar agora (${platform}):`);
+      if (steps.length) {
+        steps.forEach((s) => console.log(`        ${s}`));
+      } else {
+        console.log(`        Consulte a documentação oficial de ${cli} (https://cli.github.com/ ou README).`);
+      }
+      console.log('     (ou rode `ciclo init`, que instala automaticamente)');
+    }
+
     // acli (Atlassian CLI) + Jira auth
     try {
       const acliV = execaSync('acli', ['--version'], { encoding: 'utf8' }).stdout.trim().split('\n')[0];
@@ -36,7 +51,8 @@ const doctorCommand = new Command()
       }
     } catch {
       toolFailures++;
-      console.log('  ❌ acli (Atlassian CLI): not found. Install it (macOS: `brew tap atlassian/homebrew-acli && brew install acli`; Linux/Windows: ver README) — `ciclo init` also offers auto-install.');
+      console.log('  ❌ acli (Atlassian CLI): not found.');
+      osInstallHint('acli');
     }
 
     // gh (GitHub CLI) + auth
@@ -52,7 +68,9 @@ const doctorCommand = new Command()
       if (isAuthError) {
         console.log('  ❌ gh (GitHub CLI): installed but NOT authenticated. Run `gh auth login`.');
       } else {
-        console.log('  ❌ gh (GitHub CLI): not found. Install from https://cli.github.com/ (or `ciclo init`) and run `gh auth login`.');
+        console.log('  ❌ gh (GitHub CLI): not found.');
+        osInstallHint('gh');
+        console.log('     Depois: `gh auth login`.');
       }
     }
 

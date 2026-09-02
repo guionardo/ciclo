@@ -2,6 +2,19 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — doctor oferece comando de instalação por SO
+
+- **`ciclo doctor`** agora imprime, para cada CLI ausente (acli/gh), o **comando
+  de instalação do SO em execução**: reutiliza `cliInstall.js`
+  `detectPlatform()`/`getInstallSpec()` → `brew` (macOS), `winget`/PowerShell
+  (Windows), curl/apt (Linux); Hermes já era por SO (install.sh/install.ps1).
+  Inclui o rótulo `📥 Instalar agora (<plataforma>):` + dica de `ciclo init`
+  (instala automaticamente) e de `gh auth login` após instalar o gh.
+- Validado: saída real no macOS (brew tap + brew install acli; brew install gh);
+  comandos Windows/Linux conferidos via simulação do `cliInstall.js`.
+- Skill sincronizada (seção `doctor` descreve a ordem toolchain-primeiro e os
+  comandos por SO).
+
 ## 2026-09-02 — Instalação compatível com npm 12 (allow-git)
 
 - **Problema**: em máquina limpa com npm ≥ 12, `npm install -g guionardo/ciclo`
