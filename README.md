@@ -3,41 +3,38 @@
 Framework que conecta **JIRA + GitHub + agentes de IA** para operar o ciclo completo
 de desenvolvimento: criação, detalhamento e refinamento de tasks → leitura/execução
 por agentes → revisão de código → deploy → observabilidade da evolução de tasks e roadmap.
+Multi-OS: **Linux, macOS e Windows**.
 
-**Status:** 🚧 Spec v0.1 — em definição
-**Início:** Agosto/2026
-**Autor:** Guionardo Furlan
-
----
-
-## Decisões fundamentais (v0.1)
-
-| # | Decisão | Escolha |
-|---|---|---|
-| D1 | Relação com L3A | Projeto novo e independente; pode compartilhar ideias (hub de contexto, padrões), mas não está atrelado ao cliente L3A |
-| D2 | JIRA | Integrado via **ACLI oficial** (Atlassian CLI) com OAuth — session na HOME, sem tokens no repo (ADR-001) |
-| D3 | Runtime dos agentes | Hermes Agent + opencode (ambos, papéis distintos) |
-| D4 | Time alvo | Time pequeno de desenvolvimento |
-| D5 | Stack do framework | Node.js + JavaScript (CLI `ciclo`); projetos alvo em qualquer stack (fingerprint detecta JS/TS, .NET, Go, Python, Rust, PHP) |
-| D6 | Banco de dados | **SQL Server** como padrão dos projetos alvo; PostgreSQL e MySQL no radar — camada de dados aberta |
-| D7 | Deploy | GitHub Actions já funciona nos projetos; o framework **observa** (integração posterior) |
-| D8 | Estratégia v0.1 | **Local-first**: framework instalado no ambiente de um desenvolvedor piloto; tasks em arquivos locais + issues no Jira via ACLI; sem credenciais no repo |
-| D9 | Contexto atual dos projetos | Repositórios existentes com aplicações desenvolvidas; fluxo de desenvolvimento manual (única automação: deploy via GitHub Actions) |
-| D10 | Setup | Wizard interativo (`ciclo init`) que valida/instala as CLIs oficiais (`acli` + `gh`, auto-instala se ausente) e exige Jira autenticado via ACLI; `ciclo doctor` para diagnóstico; fingerprint multi-stack do repo |
-| D11 | Credenciais | **Fora do repositório**: sessão da ACLI em `~/.config/acli` (OAuth) e do `gh` no keyring — nenhum token/credencial versionado; config não-sensível em `<repo>/.ciclo/config.json` (ADR-001) |
-| D12 | Decisões da IA | Registradas no repo do produto em `docs/ciclo/decisoes/` (mini-ADRs) + `CHANGELOG-IA.md` — documentação e changelog específicos do que os agentes fizeram |
+**Status:** 🚧 Spec v0.1 — piloto · **Autor:** Guionardo Furlan
 
 ---
 
-## Documentos
+## 🚀 Início rápido
 
-- [SPEC.md](SPEC.md) — Arquitetura: componentes, fluxo do ciclo, agentes, integrações (atualizado — ACLI + gh)
-- [ROADMAP.md](ROADMAP.md) — Fases de evolução (Parte I: piloto com CLIs oficiais; Parte II: PR automático/dashboard)
-- [docs/ciclo/GUIA-DEV.md](docs/ciclo/GUIA-DEV.md) — **guia prático do desenvolvedor**: instalação, primeiros comandos, fluxo do dia a dia e uso pelo agente (prompts + exemplos)
-- [docs/ciclo/ROTEIRO-REPLICACAO.md](docs/ciclo/ROTEIRO-REPLICACAO.md) — **roteiro operacional** para instalar o ciclo numa máquina nova de dev (checklist por etapa + validação ponta-a-ponta)
-- [docs/ciclo/decisoes/](docs/ciclo/decisoes/) — ADRs das decisões arquiteturais (ADR-001: CLIs oficiais e vínculo repo↔label; ADR-002: refinamento assistido agente↔dev; ADR-003: fingerprint multi-stack + label lang; ADR-004: skills empacotadas no framework)
-- [docs/ciclo/CHANGELOG-IA.md](docs/ciclo/CHANGELOG-IA.md) — registro das ações dos agentes
-- [skills/](skills/) — skills do framework empacotadas (instaladas com `ciclo skills install`)
+Pré-requisito: **Node.js 20+** e `git`. As CLIs (`acli` p/ Jira e `gh` p/ GitHub) são
+instaladas/validadas automaticamente pelo wizard.
+
+```bash
+# 1. Instalar a CLI direto do repositório GitHub
+npm install -g guionardo/ciclo
+ciclo --version                    # → 0.1.0
+
+# 2. Instalar as skills do framework no Hermes (1ª vez)
+ciclo skills install
+
+# 3. Inicializar um projeto de dev
+cd /caminho/para/seu/repositorio
+ciclo init -y                      # wizard interativo: ciclo init
+
+# 4. Criar a primeira task (local + issue no Jira)
+ciclo new "Minha primeira feature"
+```
+
+Para atualizar depois: `npm install -g guionardo/ciclo@main` — a CLI avisa
+sozinha quando há versão nova (1×/dia) e `ciclo update-check` mostra o changelog.
+
+> 📖 Quer o passo a passo completo numa máquina nova? Veja o
+> [ROTEIRO-REPLICACAO.md](docs/ciclo/ROTEIRO-REPLICACAO.md).
 
 ---
 
@@ -48,9 +45,8 @@ por agentes → revisão de código → deploy → observabilidade da evolução
 > vai a deploy via pipeline GitHub Actions existente, e o roadmap reflete o estado real.
 
 **v0.1 é local-first:** roda no ambiente de um desenvolvedor piloto, sobre os
-repositórios existentes do time, sem depender de APIs externas. Jira Cloud e
-GitHub entram depois, como adaptadores plugáveis (`JiraTaskStore`,
-`GithubVcsAdapter`).
+repositórios existentes do time. Jira e GitHub entram via **CLIs oficiais**
+(ACLI + gh) — credenciais nunca ficam no repo.
 
 ```mermaid
 flowchart LR
@@ -63,11 +59,70 @@ flowchart LR
     G -.feedback.-> A
 ```
 
-## Instalação
+---
 
-### 1. Pré-requisitos
+## Fluxo do dia a dia
 
-O ciclo usa duas CLIs oficiais para as integrações:
+```
+ciclo new "descrição"          # 1. criar (local + Jira, label do repo + lang:<stack>)
+ciclo refine <id>              # 2. refinar (detalhar, critérios) — ou pelo agente (chat)
+ciclo start <id>               # 3. iniciar: branch TASK/<id>-<slug> + Jira → IN PROGRESS
+... implementação no código ... # 4. desenvolver no branch
+ciclo move <id> revisao        # 5. Jira → IN REVIEW (pedido de review)
+ciclo move <id> concluida      # 6. Jira → DONE (merge manual na main)
+ciclo report --jira            # 7. ver o board/roadmap
+```
+
+**Refinamento assistido pelo agente** (ADR-002) — você conversa, o agente opera:
+
+1. **Contexto** — o agente roda `ciclo contexto <id>` (task + parents Jira + código).
+2. **Proposta** — propõe o plano no chat (🎯 objetivo · 🪜 passos · 📦 resultado esperado · 📝 critérios).
+3. **Aprovação** — você revisa e aprova no chat.
+4. **Aplicação** — `ciclo refine <id> --plan '<json>'` salva local e sincroniza o Jira (descrição + label `refined`).
+
+> 👨‍💻 O [GUIA-DEV.md](docs/ciclo/GUIA-DEV.md) tem o manual completo do dev:
+> primeiros comandos, exemplos de prompts para o agente e troubleshooting.
+
+---
+
+## Comandos
+
+```bash
+ciclo list                     # tasks locais (inclui as importadas do Jira)
+ciclo new "descrição" [--type Story] [--parent FW-9]
+ciclo show <id>                # id local (a1b2c3d4) ou chave Jira (FW-27)
+ciclo contexto <id>            # material p/ o agente refinar (task + parents + código)
+ciclo refine <id> [--plan '<json>']
+ciclo start <id>               # gateia na label refined; branch + Jira IN PROGRESS
+ciclo move <id> [estado]       # backlog | refinando | pronta | em_execução | revisao | concluida
+ciclo sync                     # puxa do Jira as tasks com o label deste repositório
+ciclo report [--jira]          # observabilidade (local / mesclada com Jira)
+ciclo doctor                   # valida ACLI + gh + conexões
+ciclo update-check             # nova versão da CLI + changelog (--json / --forcar)
+ciclo skills list|install      # skills do framework em ~/.hermes/skills/
+ciclo instrucoes [--texto] [--check]   # o que é passado ao agente
+```
+
+---
+
+## Documentos
+
+| Documento | Pra quê |
+|---|---|
+| [docs/ciclo/GUIA-DEV.md](docs/ciclo/GUIA-DEV.md) | **Manual do desenvolvedor** — instalação, comandos, fluxo e uso pelo agente |
+| [docs/ciclo/ROTEIRO-REPLICACAO.md](docs/ciclo/ROTEIRO-REPLICACAO.md) | Instalar o ciclo numa máquina nova (checklist por etapa) |
+| [docs/ciclo/DECISOES-FUNDAMENTAIS.md](docs/ciclo/DECISOES-FUNDAMENTAIS.md) | Decisões fundamentais (D1–D12) |
+| [SPEC.md](SPEC.md) | Arquitetura: componentes, fluxo, agentes, integrações |
+| [ROADMAP.md](ROADMAP.md) | Fases de evolução |
+| [docs/ciclo/decisoes/](docs/ciclo/decisoes/) | ADRs das decisões arquiteturais (ADR-001 a ADR-004) |
+| [docs/ciclo/CHANGELOG-IA.md](docs/ciclo/CHANGELOG-IA.md) | Registro das ações dos agentes |
+| [skills/](skills/) | Skills do framework empacotadas (`ciclo skills install`) |
+
+---
+
+## Instalação detalhada
+
+### Pré-requisitos
 
 | CLI | Uso no ciclo | Obrigatória? |
 |---|---|---|
@@ -77,7 +132,7 @@ O ciclo usa duas CLIs oficiais para as integrações:
 > `ciclo init` detecta CLIs ausentes e oferece instalação automática por sistema
 > operacional — ou mostra as instruções manuais abaixo.
 
-### 2. Instalar a `acli` (Atlassian CLI)
+### Instalar a `acli` (Atlassian CLI)
 
 **macOS (Homebrew):**
 ```bash
@@ -124,7 +179,7 @@ sudo yum install -y acli
 
 Documentação oficial: https://developer.atlassian.com/cloud/acli/guides/install-acli/
 
-### 3. Instalar o `gh` (GitHub CLI)
+### Instalar o `gh` (GitHub CLI)
 
 **macOS:**
 ```bash
@@ -157,7 +212,7 @@ sudo dnf install -y gh
 
 Documentação oficial: https://cli.github.com/
 
-### 4. Autenticação
+### Autenticação
 
 ```bash
 # Jira (via ACLI – OAuth no navegador)
@@ -176,7 +231,7 @@ acli jira auth status
 gh auth status
 ```
 
-### 5. Instalar a CLI ciclo
+### Instalar a CLI ciclo
 
 **Opção rápida — direto do repositório GitHub (recomendado):**
 
@@ -196,35 +251,12 @@ ciclo --version                   # valida (→ 0.1.0)
 
 **Opção local (para contribuir/desenvolver):**
 
-1. Clone o repositório do framework:
-    ```bash
-    git clone <URL_DO_REPOSITORIO_CICLO>
-    cd ciclo/cli
-    ```
-
-2. Instale as dependências:
-    - Com npm: `npm install`
-    - Com bun: `bun install`
-    - Com pnpm: `pnpm install`
-
-3. Linke a CLI globalmente:
-    - Com npm: `npm link`
-    - Com bun: `bun link`
-    - Com pnpm: `pnpm link --global`
-
-4. Instale as skills do framework no Hermes (ambiente novo):
-    ```bash
-    ciclo skills install      # copia skills/ → ~/.hermes/skills/
-    ciclo skills list         # vê o que foi empacotado
-    # --force sobrescreve versões existentes
-    ```
-
-5. Inicialize em um projeto:
-    ```bash
-    cd /caminho/para/seu/projeto
-    ciclo init          # wizard interativo (instala CLIs se faltarem, configura Jira)
-    ciclo init -y       # aceita padrões
-    ```
+```bash
+git clone <URL_DO_REPOSITORIO_CICLO>
+cd ciclo/cli
+npm install          # ou: bun install / pnpm install
+npm link             # ou: bun link / pnpm link --global
+```
 
 > Credenciais **nunca** ficam no repositório: a sessão da ACLI vive na HOME do usuário
 > (`~/.config/acli`) e a do `gh` em seu keyring — o projeto guarda apenas
@@ -232,13 +264,23 @@ ciclo --version                   # valida (→ 0.1.0)
 
 ---
 
-1. **Task local é a fonte da verdade do *quê* e do *estado*** (vira issue no Jira na fase 2+); o git do projeto é a fonte do *código*.
-2. **Agentes nunca pulam estados** — transições de task seguem o workflow definido.
-3. **Humano no loop nos pontos caros** — aprovação de spec refinada e merge são sempre humanos.
-4. **Adaptadores, não acoplamento** — nada fala direto com Jira/GitHub; tudo passa pelas interfaces `TaskStore`/`VcsAdapter`, com implementação local hoje e remota amanhã.
-5. **Tudo rastreado** — cada ação de agente deixa registro (evento em `events.jsonl`, commit na branch, log).
-6. **Segredo nunca versionado** — credenciais vivem fora do repo (`~/.ciclo/`); o que vai no repo é só config não-sensível.
-7. **A IA documenta as próprias decisões** — toda escolha técnica relevante vira mini-ADR em `docs/ciclo/decisoes/` e entra no `CHANGELOG-IA.md`.
+## Checagem periódica de versão
+
+A CLI verifica **automaticamente** (1×/dia, silenciosa) se há versão nova no
+repositório GitHub — quando existe, mostra um aviso discreto:
+
+```
+⚡ Nova versão da CLI ciclo disponível: 0.1.0 → 0.2.0
+   Rode `ciclo update-check` para ver o changelog, ou atualize com:
+   npm install -g guionardo/ciclo@0.2.0
+```
+
+- Desligue com `CICLO_SKIP_UPDATE_CHECK=1` (ou em CI é ignorada).
+- `ciclo update-check` mostra o changelog: body da última **GitHub Release**
+  quando existir; sem releases, as entradas recentes do `CHANGELOG-IA.md` da
+  main.
+- Dica: crie uma **GitHub Release** por versão (`gh release create v0.2.0`)
+  — o changelog da release passa a ser exibido e o update usa `@v0.2.0`.
 
 ---
 
@@ -257,69 +299,13 @@ acli jira auth status
 ciclo doctor   # mostraria: Jira: ✅ Connection: OK (via ACLI)
 ```
 
-### Workflow de tasks
+### Labels automáticas
 
-```bash
-ciclo show FW-123            # busca no Jira e salva localmente (se não existir)
-ciclo new "Minha feature"    # cria localmente E no Jira (projeto do config + label do repo + lang:<stack>)
-ciclo new "Bugfix" --type Bug # define o tipo de issue (Epic, Feature, Story, Task, Bug)
-ciclo new "Story k8s" --parent FW-9  # vincula a issue pai (hierarquia: Epic→Feature→Story→Task)
-ciclo contexto <id>          # reúne task + parents Jira + estrutura de código (material p/ o agente)
-ciclo refine <id>            # detalha a task (descrição, critérios) e sincroniza no Jira
-ciclo refine <id> --plan '<json>'   # aplica plano aprovado no chat → marca refinada (label "refined")
-ciclo start <id>             # gateia na label refined; branch + Jira IN PROGRESS
-ciclo move <id> em_execução  # atualiza local + sincroniza status no Jira (ação via ACLI)
-ciclo move <id>              # sem estado: descobre as lanes que a issue pode adotar e pergunta
-ciclo sync                   # puxa do Jira as tasks com o label deste repositório
-ciclo report                 # observabilidade local (estados, idade, branches, atividade)
-ciclo report --jira          # + mescla dados do Jira (assignee, prioridade, status, labels)
-ciclo list                   # tasks locais (inclui as importadas do Jira)
-ciclo doctor                 # valida ACLI + gh + conexões
-ciclo update-check           # verifica nova versão da CLI + mostra changelog
-ciclo update-check --json    # saída estruturada (jq)
-ciclo update-check --forcar  # ignora o cache e consulta o GitHub agora
-ciclo instrucoes             # exibe AGENTS.md (projeto+global) e o resumo das skills habilitadas
-ciclo instrucoes --texto     # inclui o conteúdo integral de cada SKILL.md
-ciclo instrucoes --check     # só lista quais arquivos/skills existem
-```
-
-### Checagem periódica de versão
-
-A CLI verifica **automaticamente** (1×/dia, silenciosa) se há versão nova no
-repositório GitHub — quando existe, mostra um aviso discreto:
-
-```
-⚡ Nova versão da CLI ciclo disponível: 0.1.0 → 0.2.0
-   Rode `ciclo update-check` para ver o changelog, ou atualize com:
-   npm install -g guionardo/ciclo@0.2.0
-```
-
-- Desligue com `CICLO_SKIP_UPDATE_CHECK=1` (ou em CI é ignorada).
-- `ciclo update-check` mostra o changelog: body da última **GitHub Release**
-  quando existir; sem releases, as entradas recentes do `CHANGELOG-IA.md` da
-  main.
-- Dica: crie uma **GitHub Release** por versão (`gh release create v0.2.0`)
-  — o changelog da release passa a ser exibido e o update usa `@v0.2.0`.
-- Atualização: `npm install -g guionardo/ciclo@main` (ou `@<nova-versão>`).
-
-### Refinamento assistido (agente ↔ dev)
-
-Fluxo para o agente refinar tasks com **aprovação humana** (ADR-002):
-
-1. **Contexto** — o agente roda `ciclo contexto <id>` (task + parents Jira + código).
-2. **Proposta** — propõe o plano no chat (🎯 objetivo · 🪜 passos · 📦 resultado esperado · 📝 critérios).
-3. **Aprovação** — o dev revisa e aprova no chat.
-4. **Aplicação** — `ciclo refine <id> --plan '<json>'` salva local, marca `refinando`
-   e sincroniza o Jira (descrição estruturada + label `refined`).
-
-### Label de linguagem (`lang:<stack>`)
-
-O fingerprint detecta a stack do projeto (`package.json`, `*.sln`/`*.csproj`/
-`global.json` (**.NET**), `go.mod`, `requirements.txt`/`pyproject.toml`,
-`Cargo.toml`, `composer.json` — ver ADR-003)
-e grava `stack.language` no `.ciclo/config.json`. Cada issue criada no Jira recebe
-a label `lang:<stack>` (ex.: `lang:dotnet`, `lang:go`, `lang:python`) junto com o label do repo —
-aplicada também em atualizações, sem duplicar.
+| Label | Origem | Exemplo |
+|---|---|---|
+| `<repo>` | vínculo repositório ↔ label (remote `origin`; env `CICLO_REPO_LABEL` p/ override) | `atendente-imoveis` |
+| `lang:<stack>` | fingerprint do projeto (`stack.language` — JS/TS, .NET, Go, Python, Rust, PHP) | `lang:go`, `lang:dotnet` |
+| `refined` | adicionada pelo `refine` (prontidão para execução) | `refined` |
 
 ### Hierarquia de issue types (Jira)
 
@@ -333,7 +319,6 @@ Ao criar uma issue (`ciclo new`), você pode escolher o tipo. **Default: `Task`.
 | 4 | **Task** *(default)* | — | Unidade de trabalho |
 | 4 | **Bug** | — | Correção de defeito |
 
-Como escolher:
 - `ciclo new "descrição"` → pergunta o tipo (menu interativo, default `Task`)
 - `ciclo new "descrição" --type Story` → usa direto (aceita minúsculas)
 - Default por projeto: `config.services.jira.issueType = "Story"` (pula o prompt)
@@ -341,17 +326,13 @@ Como escolher:
 ### Vínculo repositório ↔ label
 
 Cada task sincronizada com o Jira é marcada com o **label do repositório local**
-(derivado do remote `origin` ou do nome do diretório, ex.: `test-piloto-zero`,
-`ciclo`). Isso garante que:
+(derivado do remote `origin` ou do nome do diretório). Isso garante que:
 
 - **Local → Jira** (`ciclo new`): a issue criada no Jira recebe o label do repo.
 - **Jira → Local** (`ciclo show`, `ciclo sync`): só tasks **com o label deste repo**
-  são consideradas tasks deste repositório — importa sem duplicar as que já existem
-  localmente e ignora issues de outros repos.
-- **Task sem o label do repo**: ao puxar uma issue do Jira que **não tem** o label,
-  o ciclo **pergunta se você quer adicioná-lo** (ex.: `Deseja atualizá-la no Jira?`).
-  Isso só acontece quando a pasta atual é um **repositório git** — fora de um repo,
-  a issue é importada sem alterar o Jira.
+  são consideradas — importa sem duplicar e ignora issues de outros repos.
+- **Task sem o label do repo**: o ciclo **pergunta se você quer adicioná-lo**
+  (quando a pasta atual é um repositório git).
 
 O label pode ser sobrescrito com a env var `CICLO_REPO_LABEL`.
 
@@ -393,4 +374,4 @@ Para adaptar ao workflow do seu projeto Jira, defina `statusMap` no config:
 
 ---
 
-*Elaborado por: Hermes Agent (analista de IA) – data: 2026‑08‑26 (atualizado com ACLI).*
+*Elaborado por: Hermes Agent (analista de IA) – data: 2026‑09‑02 (README como entrada rápida; decisões em docs/ciclo/DECISOES-FUNDAMENTAIS.md).*

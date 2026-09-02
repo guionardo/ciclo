@@ -2,7 +2,20 @@
 
 *Changes made by ciclo agents*
 
-## 2026-09-02 — Checagem periódica de versão + `ciclo update-check`
+## 2026-09-02 — README como entrada rápida + decisões em doc separado
+
+- **README.md reorganizado**: virou documento de **entrada rápida para o dev** —
+  "🚀 Início rápido" com `npm install -g guionardo/ciclo` logo no topo
+  (pré-requisitos → CLI → skills → init → primeira task), depois fluxo do dia a
+  dia, comandos, tabela de Documentos e referências (instalação detalhada,
+  checagem de versão, integração Jira/labels/status).
+- **`docs/ciclo/DECISOES-FUNDAMENTAIS.md` criado**: recebeu a tabela D1–D12
+  (movida do README) + índice dos ADRs 001–004.
+- Skill `ciclo-framework-setup` atualizada (padrão de docs: README curto de
+  entrada; detalhes em GUIA-DEV/ROTEIRO/SPEC; decisões em
+  DECISOES-FUNDAMENTAIS + ADRs).
+
+### 2026-09-02 — Checagem periódica de versão + `ciclo update-check`
 
 - **`src/services/updateCheck.js`**: versão local vs GitHub (releases → senão
   package.json da main); `gh api` preferido (funciona com repo **privado**),

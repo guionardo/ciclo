@@ -47,9 +47,16 @@ Regras:
     numerada `1.6.1` quando o tema cresce).
   - Índice de ADRs (seção 1.10) — listar o novo arquivo.
   - Fluxo de trabalho (seção 2) — adicionar os novos passos com comentário inline.
-- **README.md**:
+- **README.md** (desde 2026-09-02 é documento de **entrada rápida**, não a casa
+  das decisões):
+  - "🚀 Início rápido" no topo: `npm install -g guionardo/ciclo` → skills →
+    `ciclo init -y` → `ciclo new`; depois fluxo do dia a dia, tabela de
+    comandos e tabela de Documentos.
   - Workflow de tasks (bloco de comandos) + seção curta por feature nova.
-  - Lista "Documentos" — citar o novo ADR no parêntese.
+  - Lista "Documentos" — citar o novo ADR / DECISOES-FUNDAMENTAIS.
+  - Decisões fundamentais vivem em `docs/ciclo/DECISOES-FUNDAMENTAIS.md`
+    (tabela D1–D12 + índice de ADRs) — NÃO editar a tabela D no README (ela não
+    existe mais lá).
 - **ROADMAP.md**: marcar itens concluídos com `[x]` e sufixo `(ADR-NNN)` na fase
   correspondente (Fase 0 fingerprint multi-stack; Fase 4 refinamento assistido).
 
