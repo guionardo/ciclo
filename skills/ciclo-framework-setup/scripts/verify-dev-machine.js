@@ -7,6 +7,9 @@
 // Roda de qualquer diretório:
 //   node verify-dev-machine.js            # checks básicos (sem exigir repo)
 //   node verify-dev-machine.js [repoDir]  # + valida ciclo doctor no repo
+//   node verify-dev-machine.js --ci       # modo CI: imprime tudo e sai 0 mesmo
+//                                         # com pendências (valida execução/forma,
+//                                         # não o ambiente da máquina)
 //
 // Exit code: 0 = pronto, 1 = algo faltando. Cada check imprime ✅/❌.
 
@@ -19,6 +22,11 @@ const os = require('node:os');
 
 const HOME = os.homedir();
 const HERMES_SKILLS = join(HOME, '.hermes', 'skills');
+
+// Modo CI: no workflow, o runner não tem acli autenticado nem config global —
+// então esse modo valida que o script RODA e produz a saída esperada nos 3 SOs
+// (execução/forma), e sai com 0 independente das pendências do runner.
+const CI_MODE = process.argv.includes('--ci');
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -112,8 +120,8 @@ if (existsSync(globalCfg)) {
   record('Config global ~/.ciclo/config.json', false, 'não existe — crie com devName + reposDir ou rode `ciclo init` interativo');
 }
 
-// 7. (opcional) ciclo doctor num repo
-const repoArg = process.argv[2];
+// 7. (opcional) ciclo doctor num repo (ignora flags)
+const repoArg = process.argv.slice(2).find((a) => !a.startsWith('--'));
 if (repoArg) {
   console.log('');
   if (existsSync(join(repoArg, '.ciclo', 'config.json'))) {
@@ -135,6 +143,10 @@ const total = pass + fail;
 console.log(`📊 Resultado: ${pass}/${total} checks OK${fail > 0 ? `, ${fail} pendente(s)` : ''}.`);
 if (fail > 0) {
   console.log('   Verifique os ❌ acima; para o Jira é obrigatório ter acli autenticado.');
+  if (CI_MODE) {
+    console.log('   (modo --ci: execução validada; pendências esperadas no runner sem ambiente real)');
+    process.exit(0);
+  }
   process.exit(1);
 }
 console.log('   Máquina pronta para o ciclo! 🚀');

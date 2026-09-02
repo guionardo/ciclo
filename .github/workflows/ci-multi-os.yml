@@ -1,0 +1,119 @@
+# CI multi-OS — valida a compatibilidade do ciclo com Linux, macOS e Windows.
+#
+# Roda em cada push/PR:
+#   1. Sintaxe de todos os .js do CLI
+#   2. Instala o CLI (npm ci + npm link) e verifica `ciclo` no PATH
+#   3. `verify-dev-machine.js --ci` (modo CI: valida execução/saída; o runner
+#      não tem acli autenticado nem config global, então pendências são
+#      esperadas e não falham o job)
+#   4. Smoke do fingerprint multi-stack (.NET + Go + Python) num repo fake
+#   5. `ciclo skills list` e instalação das skills num HOME temporário
+#
+# Obs.: o fluxo ponta-a-ponta com Jira (new/refine/start/move) exige acli
+# autenticado — fica para smoke manual ou CI com secrets no futuro.
+
+name: CI multi-OS
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: cli/package-lock.json
+
+      - name: Install CLI deps + link global
+        shell: bash
+        working-directory: cli
+        run: |
+          npm ci
+          npm link
+          ciclo --version
+
+      - name: Syntax check (todos os .js do src)
+        shell: bash
+        working-directory: cli
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            node --check "$f" || { echo "SYNTAX FAIL: $f"; fail=1; }
+          done < <(find src bin -name '*.js' -not -path '*/node_modules/*')
+          exit $fail
+
+      - name: Sintaxe do verify-dev-machine.js
+        shell: bash
+        run: node --check skills/ciclo-framework-setup/scripts/verify-dev-machine.js
+
+      - name: verify-dev-machine.js (modo CI)
+        shell: bash
+        run: node skills/ciclo-framework-setup/scripts/verify-dev-machine.js --ci
+
+      - name: Smoke fingerprint multi-stack
+        shell: bash
+        run: |
+          node -e '
+          const { fingerprintRepo } = require("./cli/src/fingerprint.js");
+          const fs = require("node:fs");
+          const os = require("node:os");
+          const path = require("node:path");
+          const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "ciclo-fp-"));
+          const cases = [
+            ["dotnet", { "App.sln": "sln" }],
+            ["go", { "go.mod": "module github.com/x/y" }],
+            ["python", { "requirements.txt": "flask" }],
+          ];
+          (async () => {
+            let fail = 0;
+            for (const [expect, files] of cases) {
+              const dir = path.join(tmp, expect);
+              fs.mkdirSync(dir, { recursive: true });
+              for (const [name, body] of Object.entries(files)) {
+                fs.writeFileSync(path.join(dir, name), body);
+              }
+              const f = await fingerprintRepo(dir);
+              const ok = f.language === expect;
+              console.log((ok ? "PASS" : "FAIL") + " " + expect + " -> " + f.language);
+              if (!ok) fail = 1;
+            }
+            process.exit(fail);
+          })().catch((e) => { console.error(e); process.exit(1); });
+          '
+
+      - name: ciclo skills list + install (HOME temporário)
+        shell: bash
+        run: |
+          FAKE_HOME="$(mktemp -d)"
+          HOME="$FAKE_HOME" ciclo skills list
+          HOME="$FAKE_HOME" ciclo skills install
+          test -f "$FAKE_HOME/.hermes/skills/ciclo-framework-setup/SKILL.md" \
+            && echo "SKILL_INSTALLED_OK" \
+            || { echo "SKILL_INSTALL_FAILED"; exit 1; }
+
+      - name: Fluxo local sem Jira (init não roda sem acli autenticado — smoke dos comandos)
+        shell: bash
+        run: |
+          tmp="$(mktemp -d)"
+          cd "$tmp"
+          git init -q
+          ciclo --help > /dev/null && echo "HELP_OK"
+          ciclo skills --help > /dev/null && echo "SKILLS_HELP_OK"
