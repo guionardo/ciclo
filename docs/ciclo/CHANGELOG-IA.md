@@ -2,7 +2,25 @@
 
 *Changes made by ciclo agents*
 
-## 2026-08-29 — Roteiro de replicação da instalação (máquinas de dev)
+## 2026-08-29 — Compatibilidade Linux/macOS/Windows + verificação de máquina
+
+- **Refactors para execução sem shell (multi-OS)** — comandos de git/gh/acli
+  agora usam `execaSync`/array de args (sem `shell: true`), funcionando igual
+  nos 3 SOs (inclusive paths/descrições com espaços):
+  - `repoLabel.js` e `context.js` → `git remote get-url origin`
+  - `GithubVcsAdapter.js` → `_git`, `_ghApi`, `openPullRequest`, `getWorkflowStatus`
+  - `start.js` → gh auth/api/push; `doctor.js` → gh --version/auth status
+  - (JiraTaskStore já havia sido refatorado no commit `88c7698`)
+- **`verify-dev-machine.js` criado** (skill `scripts/`, Node puro sem deps — roda
+  nos 3 SOs): valida Node, CLI ciclo, acli+auth, gh+auth, skills instaladas,
+  config global e (opcional) `ciclo doctor` num repo. Exit 0/1; testado 9/9 na
+  máquina pronta e com HOME fake (4 pendentes detectados + orientações).
+- **ROTEIRO-REPLICACAO** ganhou seção "Suporte a sistemas operacionais" (tabela
+  por camada/SO) e a Etapa 6 usa o `verify-dev-machine.js` como validação
+  principal (`.sh` fica como bônus Linux/macOS).
+- `cliInstall.js` já cobria os 3 SOs (specs macos/windows/linux) — sem mudanças.
+
+### 2026-08-29 — Roteiro de replicação da instalação (máquinas de dev)
 
 - **ROTEIRO-REPLICACAO.md criado** (`docs/ciclo/ROTEIRO-REPLICACAO.md`):
   checklist operacional de 7 etapas para instalar o ciclo numa máquina nova —

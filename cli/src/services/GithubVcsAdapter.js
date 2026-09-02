@@ -5,14 +5,14 @@
 //   GITHUB_REPO  - repository name (optional, can be overridden per call)
 // If gh CLI is not available or owner/repo not set, the adapter will operate in "mock" mode.
 
-const { execSync } = require('child_process');
+const { execaSync } = require('execa');
 
 class GithubVcsAdapter {
   constructor(repoPath) {
     this.repoPath = repoPath;
     // Check if gh CLI is available
     try {
-      execSync('gh --version', { stdio: 'ignore' });
+      execaSync('gh', ['--version']);
       this.ghAvailable = true;
     } catch (_) {
       this.ghAvailable = false;
@@ -26,19 +26,20 @@ class GithubVcsAdapter {
 
   _ghApi(path, method = 'GET', data = null) {
     if (!this.ghAvailable) throw new Error('gh CLI not available');
-    let args = ['api', path, `--method ${method}`];
+    const args = ['api', path, '--method', method];
     if (data) {
       // Pass JSON data as stdin via --input
-      args = args.concat(['--input', JSON.stringify(data)]);
+      args.push('--input', JSON.stringify(data));
     }
-    const output = execSync(`gh ${args.join(' ')}`, { encoding: 'utf8' });
-    return JSON.parse(output);
+    // Run WITHOUT shell (array args) — works on Linux/macOS/Windows, values verbatim
+    const output = execaSync('gh', args, { encoding: 'utf8' });
+    return JSON.parse(output.stdout);
   }
 
   _git(args, opts = {}) {
     const options = { cwd: this.repoPath, encoding: 'utf8', ...opts };
     try {
-      return execSync(`git ${args.join(' ')}`, options);
+      return execaSync('git', args, { ...options }).stdout;
     } catch (err) {
       throw new Error(`git ${args.join(' ')} failed: ${err.message}`);
     }
@@ -75,17 +76,17 @@ class GithubVcsAdapter {
 
   async openPullRequest(prData) {
     const { title, body, head, base } = prData;
-    let args = ['pr', 'create', '--title', title, '--head', head];
+    const args = ['pr', 'create', '--title', title, '--head', head];
     if (base) {
-      args = args.concat(['--base', base]);
+      args.push('--base', base);
     } else {
-      args = args.concat(['--base', 'main']); // default base
+      args.push('--base', 'main'); // default base
     }
     if (body) {
-      args = args.concat(['--body', body]);
+      args.push('--body', body);
     }
-    const output = execSync(`gh ${args.join(' ')}`, { encoding: 'utf8' });
-    const pr = JSON.parse(output);
+    const output = execaSync('gh', args, { encoding: 'utf8' });
+    const pr = JSON.parse(output.stdout);
     return { id: pr.number, url: pr.html_url };
   }
 
@@ -95,11 +96,11 @@ class GithubVcsAdapter {
       return { state: 'pending' };
     }
     try {
-      const output = execSync(
-        `gh api /repos/${this.owner}/${this.repo}/commits/${commitHash}/check-runs`,
+      const output = execaSync(
+        'gh', ['api', `/repos/${this.owner}/${this.repo}/commits/${commitHash}/check-runs`],
         { encoding: 'utf8' }
       );
-      const data = JSON.parse(output);
+      const data = JSON.parse(output.stdout);
       if (data.total_count === 0) {
         return { state: 'pending' };
       }

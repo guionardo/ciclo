@@ -9,7 +9,7 @@
 //   2. git remote origin URL (owner/repo → repo name, normalized)
 //   3. basename of the current directory
 
-const { execaCommandSync } = require('execa');
+const { execaSync } = require('execa');
 const { basename } = require('node:path');
 
 function getRepoLabel(cwd) {
@@ -18,9 +18,9 @@ function getRepoLabel(cwd) {
   }
   // Try git remote origin (https://github.com/owner/repo.git or git@github.com:owner/repo.git)
   try {
-    const url = execaCommandSync('git remote get-url origin', {
+    // Run WITHOUT shell (array args) so this works on Linux/macOS/Windows alike
+    const url = execaSync('git', ['remote', 'get-url', 'origin'], {
       cwd,
-      shell: true,
       stdio: ['ignore', 'pipe', 'ignore'],
     }).stdout.trim();
     if (url) {

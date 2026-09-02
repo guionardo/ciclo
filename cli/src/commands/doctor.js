@@ -78,10 +78,10 @@ const doctorCommand = new Command()
     }
 
     // GitHub — validate via gh CLI authentication only (no config stored)
-    const { execSync } = require('child_process');
+    const { execaSync } = require('execa');
     try {
-      execSync('gh --version', { stdio: 'ignore' });
-      const authOutput = execSync('gh auth status', { encoding: 'utf8', stdio: [] });
+      execaSync('gh', ['--version'], { stdio: 'ignore' });
+      const authOutput = execaSync('gh', ['auth', 'status'], { encoding: 'utf8', stdio: [] }).stdout;
       const match = authOutput.match(/Logged in to (\S+) account (\S+)/);
       console.log('  GitHub: gh CLI installed');
       console.log(`    ✅ Authenticated as: ${match ? match[2] : 'unknown account'}`);

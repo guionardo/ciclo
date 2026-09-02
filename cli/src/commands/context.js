@@ -14,7 +14,7 @@
 const { Command } = require('commander');
 const { readFile, readdir, access } = require('node:fs/promises');
 const { join } = require('node:path');
-const { execaCommandSync } = require('execa');
+const { execaSync } = require('execa');
 
 const contextCommand = new Command()
   .command('contexto <id>')
@@ -140,8 +140,8 @@ const contextCommand = new Command()
 
     // Repo origin (if any)
     try {
-      const url = execaCommandSync('git remote get-url origin', {
-        cwd, shell: true, stdio: ['ignore', 'pipe', 'ignore'],
+      const url = execaSync('git', ['remote', 'get-url', 'origin'], {
+        cwd, stdio: ['ignore', 'pipe', 'ignore'],
       }).stdout.trim();
       if (url) out.push(`   Remote: ${url}`);
     } catch (_) { /* no remote */ }

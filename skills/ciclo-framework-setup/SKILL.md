@@ -132,7 +132,8 @@ After running through the steps, the following should hold:
 - See `references/repo-label-binding.md` for the **repo ↔ label binding**: `repoLabel.js` resolution, `CICLO_REPO_LABEL`, label-aware `show`/`sync` dedupe, and the mandatory `--fields ...labels` ACLI detail.
 - See `references/init-walkthrough.md` for a detailed transcript of a full initialization session.
 - See `templates/ciclo-config.json` for an example configuration file.
-- See `scripts/verify-setup.sh` for a quick verification script that checks the presence of key files and runs the doctor command.
+- See `scripts/verify-setup.sh` for a quick verification script that checks the presence of key files and runs the doctor command (Linux/macOS bash).
+- See `scripts/verify-dev-machine.js` for the **cross-platform machine check** (Linux/macOS/Windows, pure Node stdlib, no shell): validates Node, ciclo CLI, acli+auth, gh+auth, Hermes skills installed, `~/.ciclo/config.json` (devName/reposDir) and optionally `ciclo doctor` in a repo; exit 0/1. Run: `node ~/.hermes/skills/ciclo-framework-setup/scripts/verify-dev-machine.js [repoDir]`.
 - See `references/jira-setup.md` for the OLD Jira env-var setup (REST API era — kept for history; superseded by `acli-integration.md`).
 - See `references/skill-selection.md` for an overview of available skill sets and their purposes.
 - See `references/byte-level-repair.md` for recovering corrupted JS source (escape mangling via shell-quoted `python3 -c`; the init.js corruption incident and its byte-level fix).

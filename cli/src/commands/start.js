@@ -193,17 +193,17 @@ const startCommand = new Command()
 
     // --- GitHub integration: only used if gh CLI is authenticated (no config needed) ---
     try {
-      const { execSync } = require('child_process');
-      execSync('gh auth status', { stdio: 'ignore' });
+      const { execaSync } = require('execa');
+      execaSync('gh', ['auth', 'status'], { stdio: 'ignore' });
       // gh is authenticated — try to push the branch to origin (if a remote exists)
-      const remoteUrl = execSync('git remote get-url origin', {
+      const remoteUrl = execaSync('git', ['remote', 'get-url', 'origin'], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
-      }).trim();
+      }).stdout.trim();
       const m = remoteUrl.match(/(?:github\.com[:/])([^/]+)\/([^/]+?)(?:\.git)?$/);
       if (m) {
-        execSync('gh api /repos/' + m[1] + '/' + m[2], { encoding: 'utf8' }); // verifies repo access
-        execSync('git push -u origin ' + branchName, { encoding: 'utf8', stdio: 'pipe' });
+        execaSync('gh', ['api', `/repos/${m[1]}/${m[2]}`], { encoding: 'utf8' }); // verifies repo access
+        execaSync('git', ['push', '-u', 'origin', branchName], { encoding: 'utf8', stdio: 'pipe' });
         console.log(`   → Também criada no GitHub: ${branchName}`);
       }
     } catch (err) {

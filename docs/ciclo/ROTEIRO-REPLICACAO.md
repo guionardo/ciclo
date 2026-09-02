@@ -9,6 +9,26 @@ desenvolvedor. Siga em ordem; cada etapa tem verificação. Tempo estimado:
 
 ---
 
+## Suporte a sistemas operacionais (v0.1)
+
+O framework é **multi-OS**: Linux, macOS e Windows.
+
+| Camada | Linux | macOS | Windows |
+|---|---|---|---|
+| CLI ciclo (Node) | ✅ | ✅ | ✅ (`npm link` cria shim `.cmd`) |
+| acli (Jira) | ✅ (binário/apt/rpm) | ✅ (Homebrew/binário) | ✅ (binário `acli.exe` em `%HOME%\bin` ou PATH) |
+| gh (GitHub) | ✅ (apt/rpm) | ✅ (Homebrew) | ✅ (winget/choco/scoop) |
+| `ciclo doctor`, `list`, `new`, `refine`, `start`, `move`, `sync`, `skills` | ✅ | ✅ | ✅ |
+| `verify-dev-machine.js` (validação) | ✅ | ✅ | ✅ (Node — sem shell) |
+| `verify-setup.sh` (bônus bash) | ✅ | ✅ | ❌ (use o `.js`) |
+| Autenticação Jira | `acli jira auth login --web` (navegador, qualquer SO) | | |
+
+> O código chama as CLIs **sem shell** (args como array via execa) — funciona
+> igual nos 3 SOs, inclusive com caminhos/descrições com espaços. Os comandos
+> `ciclo` de instalação (`cliInstall`) já têm comandos específicos por SO.
+
+---
+
 ## Etapa 0 — Pré-requisitos do sistema
 
 | Item | Mínimo | Verificar com |
@@ -160,7 +180,13 @@ cat .ciclo/config.json | python3 -m json.tool   # conferir stack.language
 ## Etapa 6 — Validação completa (ponta-a-ponta)
 
 ```bash
-# 1. Validação automática do setup (script da skill)
+# 1. Verificação automática da máquina (Linux/macOS/Windows — Node, sem deps)
+node verify-dev-machine.js                        # com as skills instaladas:
+node ~/.hermes/skills/ciclo-framework-setup/scripts/verify-dev-machine.js
+# opcional: validar também um repo já inicializado
+node ~/.hermes/skills/ciclo-framework-setup/scripts/verify-dev-machine.js /caminho/para/o/projeto
+
+# 1b. (Linux/macOS) script bash da skill — checks básicos de arquivos
 bash ~/.hermes/skills/ciclo-framework-setup/scripts/verify-setup.sh
 
 # 2. Fluxo real num dos projetos
@@ -169,7 +195,7 @@ ciclo list                                # lista das tasks do repo
 ciclo new "Task de teste de instalacao"   # cria local + Jira (label do repo + lang:<stack>)
 ciclo refine <id> --plan '{"goal":"Validar instalacao","steps":["Criar","Verificar"],"expectedResult":"Setup ok","acceptanceCriteria":["Issue criada"]}'
 ciclo start <id>                          # gera branch + Jira IN PROGRESS
-ciclo move <id> concluida                 # volta p/ backlog de verdade? NÃO — use para validar transição e depois delete
+ciclo move <id> concluida                 # valida transição (depois delete)
 # limpeza da task de teste:
 rm -f .ciclo/tasks/<id>.json
 acli jira workitem delete --key <JIRA_KEY> --yes
@@ -177,6 +203,7 @@ acli jira workitem delete --key <JIRA_KEY> --yes
 
 ✅ Critérios de aceite (tudo isso deve passar):
 
+- [ ] `node verify-dev-machine.js` → **9/9 checks OK** (ou 8/8 sem repo; nas 3 plataformas)
 - [ ] `ciclo doctor` sem erros (Jira ✅, GitHub ✅)
 - [ ] `ciclo new` criou issue no Jira com label do repo + `lang:<stack>`
 - [ ] `ciclo refine --plan` gravou descrição **com quebras de linha reais** (nada de `\n` literal) e label `refined`
