@@ -39,12 +39,14 @@ Repo: env `CICLO_GITHUB_REPO` → remote `origin` do repo (dev) → `guionardo/c
 
 ## Pontos importantes
 
-- **Use `gh api` (não HTTP anônimo) como caminho principal** — o repo
-  `guionardo/ciclo` é **privado**; a API pública sem token responde **404**
-  (o GitHub não revela existência de repos privados), o que fazia o check
-  retornar "sem releases/publicado" erroneamente. `gh api` usa o token do
-  keyring e cobre repos privados. Fallback: HTTP puro com `GITHUB_TOKEN`
-  (útil em CI).
+- **`gh api` é o caminho principal (token no keyring)**, com fallback para HTTP
+  anônimo (com `GITHUB_TOKEN` se presente, útil em CI). O repo
+  `guionardo/ciclo` era **privado** quando isso foi escrito (2026-09-02) e a API
+  pública sem token respondia **404** (o GitHub não revela repos privados), o
+  que fazia o check retornar "sem releases/publicado" erroneamente — por isso o
+  `gh api` preferido. Com o repo **público** (mudou em seguida), o fallback HTTP
+  anônimo também funciona (validado: `contents/package.json` → 200; 404 só em
+  `/releases/latest` quando não há release — correto).
 - `gh api <path> --jq '.'` com `reject: false` retorna `exitCode 0` + stdout
   no sucesso; 404 vem em stderr (`/404|Not Found/i`) → retorna null.
 - `compareVersions` é local (sem dep): ignora prefixo `v`, compara numéricos
