@@ -66,6 +66,21 @@ npm link             # expõe o comando `ciclo` globalmente (ou bun link / pnpm 
 ciclo --version      # valida a instalação
 ```
 
+#### Instaladores alternativos (bun, pnpm, deno)
+
+| Instalador | Instala a CLI? | Mensagem de boas-vindas | Observações |
+|---|---|---|---|
+| **npm** (oficial, 9+) | ✅ `npm install -g guionardo/ciclo` | postinstall + first-run | Recomendado |
+| **pnpm 10/11+** | ✅ `pnpm add -g github:guionardo/ciclo` | só first-run | 🔒 pnpm bloqueia scripts de build por padrão (politica `onlyBuiltDependencies`) |
+| **bun** | ✅ `bun add -g github:guionardo/ciclo` | só first-run | 🔒 bun bloqueia postinstall por padrão ("Blocked 1 postinstall"; libere com `bun pm -g untrusted`) |
+| **deno** | ❌ não suportado | — | `deno install` baixa o CLI como script ESM; o ciclo usa CommonJS (`require`) → `ReferenceError: require is not defined` |
+
+> **Como funciona a mensagem de boas-vindas:** a CLI mostra boas-vindas +
+> comandos essenciais na **primeira execução** (`~/.ciclo/first-run.json`
+> evita repetir). Isso funciona em qualquer instalador — inclusive no npm ≥ 11
+> quando o `postinstall` é bloqueado pelo mecanismo `allow-scripts`. O
+> postinstall é um bônus, não uma dependência.
+
 ### 1.4 Instalar as skills do framework (ambiente novo)
 
 As skills que instruem o agente sobre o ciclo são **versionadas no repo** (em

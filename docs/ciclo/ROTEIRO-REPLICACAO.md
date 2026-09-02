@@ -116,6 +116,13 @@ ciclo --version   # → 0.1.0
 
 ✅ Verificação: `which ciclo` mostra o caminho do symlink (npm link).
 
+> **Instaladores:** npm é o oficial. pnpm (`pnpm add -g github:guionardo/ciclo`)
+> e bun (`bun add -g github:guionardo/ciclo`) também instalam a CLI, mas por
+> segurança **bloqueiam o `postinstall`** (mensagem de boas-vindas vem do
+> **first-run**, que funciona em todos). **Deno não é suportado** (a CLI usa
+> CommonJS; `deno install` → `ReferenceError: require is not defined`). Ver
+> detalhes no [GUIA-DEV.md](GUIA-DEV.md) §1.3.
+
 ---
 
 ## Etapa 3 — Instalar o Hermes Agent (runtime do agente)

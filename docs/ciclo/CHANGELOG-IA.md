@@ -2,6 +2,24 @@
 
 *Changes made by ciclo agents*
 
+## 2026-09-02 — Boas-vindas pós-instalação + compatibilidade de instaladores
+
+- **Mensagem de boas-vindas pós-instalação**: `scripts/welcome.js` +
+  `postinstall` no pacote (mostra comandos essenciais ao instalar). Como npm
+  ≥11, pnpm e bun **bloqueiam scripts de dependências por padrão**
+  (allow-scripts / onlyBuiltDependencies / untrusted), a garantia veio do
+  **first-run**: `cli/src/services/welcome.js` + chamada no `bin/ciclo.js`
+  mostram boas-vindas + comandos na **1ª execução** (marker
+  `~/.ciclo/first-run.json`; respeita `CICLO_NO_WELCOME=1` e CI).
+- **Instaladores testados na prática** (todos via `github:guionardo/ciclo`):
+  **npm 11.17** ✅ (postinstall condicionado a allow-scripts + first-run ok),
+  **pnpm 11.13** ✅ (bloqueia postinstall, first-run ok), **bun 1.3** ✅
+  (bloqueia postinstall, first-run ok), **deno 2.9** ❌ não suportado (CLI é
+  CommonJS → `ReferenceError: require is not defined`).
+- **Docs**: GUIA-DEV §1.3 e ROTEIRO-REPLICACAO Etapa 2 ganharam tabela/nota
+  "Instaladores alternativos (bun, pnpm, deno)"; skill sincronizada (repo +
+  local).
+
 ## 2026-09-02 — Instruções de instalação do Hermes Agent para o dev
 
 - **A instalação do Hermes Agent agora faz parte do setup do dev** (era o
