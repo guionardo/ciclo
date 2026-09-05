@@ -62,8 +62,25 @@ const initCommand = new Command()
     try {
       await access(join(cwd, '.git'));
     } catch {
-       console.error("✗ Not a git repository. Please run 'git init' first.");
-      process.exit(1);
+      // Not a git repo, try to init if allowed
+      if (opts.yes) {
+        console.log('🔧 Initializing git repository...');
+        await execa('git', ['init'], { stdio: 'ignore' });
+      } else {
+        const answer = await prompts({
+          type: 'confirm',
+          name: 'initGit',
+          message: 'No git repository found. Initialize one now?',
+          initial: true,
+        });
+        if (answer.initGit) {
+          console.log('🔧 Initializing git repository...');
+          await execa('git', ['init'], { stdio: 'ignore' });
+        } else {
+          console.error('✗ Not a git repository. Please run \'git init\' first.');
+          process.exit(1);
+        }
+      }
     }
 
     // 2. Fingerprint
