@@ -7,11 +7,11 @@
     "ciclo": "cli/bin/ciclo.js"
   },
   "files": [
-    "cli/bin",
-    "cli/src",
-    "skills",
-    "scripts/welcome.js"
-  ],
+       "cli/bin",
+       "cli/src",
+       "skills",
+       "scripts"
+     ],
   "scripts": {
     "start": "node cli/bin/ciclo.js",
     "test": "node --check cli/bin/ciclo.js && node --check cli/src/index.js",
