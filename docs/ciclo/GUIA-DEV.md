@@ -305,6 +305,11 @@ saber quais issues pertencem a este repositório (dedupe por `jiraKey` + `repoLa
 | `ciclo start` reclama de branch existente | ele faz checkout da branch existente e segue |
 | Issu não aparece no `ciclo list` | confira a label do repo na issue: `ciclo show FW-XX --fields ...labels` (ver ADR-003) |
 | `ciclo new` travado nos prompts | eles são interativos de propósito — escolha com as setas + Enter |
+| `ciclo` command not found after installation | Ensure npm global bin is in your PATH (Windows: `setx PATH "%PATH%;C:\Users\<user>\AppData\Roaming\npm"`; *nix: `export PATH="$(npm prefix -g)/bin:$PATH"`) |
+| `npm install -g guionardo/ciclo` fails with error -4058 | Install Git first, or use `npm install -g --allow-git=all guionardo/ciclo` (requires Git). |
+| `ciclo init` still says "Not a git repository" | Verify Git is installed (`git --version`); if using `-y`, the command will auto-run `git init`. |
+| `ciclo doctor` reports Hermes Agent not found | Install Hermes Agent via the OS‑specific installer (see the **Instalação** section). |
+| `ciclo skills install` fails with permission errors | Run the command with sufficient permissions or adjust folder rights for `~/.hermes/skills/` |
 
 ---
 
